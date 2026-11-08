@@ -1,67 +1,64 @@
 import { reactive, watch } from "vue";
-import { COMMODITY_MAP, commoditySeries } from "@/data/commodities";
-import { SEED_MENUS } from "@/data/menus";
-import { SEED_NOTAS } from "@/data/notas";
-import { CITIES, ROUNDING_STEPS, STORAGE_KEY, TODAY } from "./constants";
-import type { Account, Menu, Nota } from "./types";
+import { CITIES, ROUNDING_STEPS, STORAGE_KEY } from "./constants";
+import type { Menu, Nota, Vote } from "./types";
 
 export interface PersistedState {
+  onboardingDone: boolean;
+  session: string | null;
+  accessToken: string | null;
+  refreshToken: string | null;
+  telegramLinked: boolean;
+  telegramCode: string;
+}
+
+export interface AppState extends PersistedState {
   menus: Menu[];
   notas: Nota[];
-  readAlarms: string[];
-  onboardingDone: boolean;
-  accounts: Account[];
-  session: string | null;
+  votes: Vote[];
   ownerName: string;
   city: string;
   shareCommunity: boolean;
   roundingStep: number;
-  telegramLinked: boolean;
-  telegramCode: string;
   notifyInApp: boolean;
   notifyTelegram: boolean;
 }
 
-const seedNotas = (): Nota[] =>
-  SEED_NOTAS.map((seed, index) => {
-    const day = TODAY - seed.daysAgo;
-    const pihps = commoditySeries(COMMODITY_MAP[seed.commodityId])[day];
-    return {
-      id: `nota-seed-${index}`,
-      commodityId: seed.commodityId,
-      pricePerKg: Math.round((pihps * seed.ratio) / 500) * 500,
-      day,
-      shared: seed.shared,
-    };
-  });
+const PERSISTED: Array<keyof PersistedState> = ["onboardingDone", "session", "accessToken", "refreshToken", "telegramLinked", "telegramCode"];
 
-export const defaults = (): PersistedState => ({
-  menus: structuredClone(SEED_MENUS),
-  notas: seedNotas(),
-  readAlarms: [],
+export const defaults = (): AppState => ({
   onboardingDone: false,
-  accounts: [],
   session: null,
-  ownerName: "Bu Sari",
+  accessToken: null,
+  refreshToken: null,
+  telegramLinked: false,
+  telegramCode: "",
+  menus: [],
+  notas: [],
+  votes: [],
+  ownerName: "",
   city: CITIES[0],
   shareCommunity: true,
   roundingStep: ROUNDING_STEPS[0],
-  telegramLinked: false,
-  telegramCode: "",
   notifyInApp: true,
   notifyTelegram: true,
 });
 
-const load = (): PersistedState => {
+const load = (): AppState => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaults();
-    return { ...defaults(), ...JSON.parse(raw) };
+    return raw ? { ...defaults(), ...JSON.parse(raw) } : defaults();
   } catch {
     return defaults();
   }
 };
 
-export const state = reactive<PersistedState>(load());
+export const state = reactive<AppState>(load());
 
-watch(state, (value) => localStorage.setItem(STORAGE_KEY, JSON.stringify(value)), { deep: true });
+watch(
+  () => PERSISTED.map((key) => state[key]),
+  () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(Object.fromEntries(PERSISTED.map((key) => [key, state[key]]))));
+    } catch {}
+  },
+);

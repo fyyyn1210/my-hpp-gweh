@@ -1,4 +1,18 @@
+import { CATALOG, SAMPLE_MENUS } from "../../../server/src/drizzle/seeds/catalog";
+import { dummyPihpsSeries } from "../../../server/src/modules/commodities/pihps.dummy";
+import { setCommodities } from "@/data/commodities";
 import { CardKind, amountOf, daysOf, moneyOf, portionsOf, respond } from "./assistant";
+import { TODAY } from "./constants";
+import { state } from "./state";
+import type { Menu } from "./types";
+
+setCommodities(CATALOG.map(({ basePrice, trend, volatility, seed, unitOverrides, ...item }) => ({ ...item, unitOverrides: unitOverrides ?? {}, prices: dummyPihpsSeries({ basePrice, trend, volatility, seed, ...item }) })));
+state.menus = SAMPLE_MENUS.map(({ daysAgo, ingredients, ...menu }) => ({
+  ...menu,
+  id: `menu-${menu.name.toLowerCase().replace(/\s+/g, "-")}`,
+  priceSetDay: TODAY - daysAgo,
+  ingredients: ingredients.map((item, index) => ({ ...item, id: `i${index}` })),
+})) as Menu[];
 
 const expect = (label: string, actual: unknown, wanted: unknown) => {
   if (JSON.stringify(actual) !== JSON.stringify(wanted)) throw new Error(`${label}: got ${JSON.stringify(actual)}, want ${JSON.stringify(wanted)}`);

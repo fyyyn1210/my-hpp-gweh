@@ -24,8 +24,9 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach((to) => {
-  const { state } = useStore();
+router.beforeEach(async (to) => {
+  const { state, loaded, load, report } = useStore();
+  if (state.session && !loaded.value) await load().catch(report);
   if (!state.session && !to.meta.guest) return { name: state.onboardingDone ? "login" : "onboarding" };
   if (state.session && to.meta.guest) return { name: "home" };
   return true;

@@ -42,10 +42,7 @@ export interface Commodity {
   name: string;
   icon: Food;
   priceUnit: string;
-  basePrice: number;
-  trend: number;
-  volatility: number;
-  seed: number;
+  prices: number[];
   aliases: string[];
   unitOverrides?: Partial<Record<Unit, number>>;
 }
@@ -91,14 +88,7 @@ export interface AlarmItem {
   menuIds: string[];
   commodityId?: string;
   severity: Status;
-  active: boolean;
-}
-
-export interface Account {
-  email: string;
-  passwordHash: string;
-  name: string;
-  city: string;
+  read: boolean;
 }
 
 export interface Nota {
@@ -107,6 +97,23 @@ export interface Nota {
   pricePerKg: number;
   day: number;
   shared: boolean;
+}
+
+export interface Vote {
+  commodityId: string;
+  pricePerKg: number;
+  day: number;
+}
+
+export interface Profile {
+  id: string;
+  email: string;
+  name: string;
+  city: string;
+  shareCommunity: boolean;
+  roundingStep: number;
+  notifyInApp: boolean;
+  notifyTelegram: boolean;
 }
 
 export interface PriceInfo {

@@ -13,13 +13,13 @@ export const DEFAULT_TARGET_MARGIN = 0.25;
 export const DEFAULT_THRESHOLD = 0.2;
 export const DEFAULT_EXTRA_COST = 1000;
 export const ROUNDING_STEPS = [500, 1000];
-export const STORAGE_KEY = "hpp-pintar-state-v3";
+export const STORAGE_KEY = "hpp-pintar-state-v4";
+export const API_URL: string = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/v1";
+export const PROFILE_SAVE_DELAY_MS = 600;
 export const EXPLAIN_DELAY_MS = 900;
 export const PASSWORD_MIN = 6;
-export const DEMO_EMAIL = "demo@myhppgweh.id";
 export const SUGGEST_IDLE_MS = 3000;
 export const SUGGEST_MAX_WORDS = 3;
-export const PARSE_DELAY_MS = 700;
 export const NOTA_MAX_AGE = 14;
 export const COMMUNITY_WINDOW = 7;
 export const COMMUNITY_MIN = 3;
@@ -80,28 +80,6 @@ export const UNIT_SHORT: Record<Unit, string> = {
   [Unit.Liter]: "liter",
 };
 
-export const UNIT_ALIASES: Record<string, Unit> = {
-  g: Unit.Gram,
-  gr: Unit.Gram,
-  gram: Unit.Gram,
-  kg: Unit.Kg,
-  kilo: Unit.Kg,
-  kilogram: Unit.Kg,
-  ons: Unit.Ons,
-  siung: Unit.Siung,
-  butir: Unit.Butir,
-  biji: Unit.Butir,
-  btr: Unit.Butir,
-  ikat: Unit.Ikat,
-  sdm: Unit.Sdm,
-  sdt: Unit.Sdt,
-  buah: Unit.Buah,
-  bh: Unit.Buah,
-  ml: Unit.Ml,
-  liter: Unit.Liter,
-  l: Unit.Liter,
-};
-
 export enum Food {
   Chili = "chili",
   Pepper = "pepper",
@@ -130,18 +108,6 @@ export enum Food {
   Dish = "dish",
   Ingredient = "ingredient",
 }
-
-export const MANUAL_PRICE_HINTS: Record<string, { name: string; icon: Food; pricePerKg: number }> = {
-  tempe: { name: "Tempe", icon: Food.Tofu, pricePerKg: 20000 },
-  tahu: { name: "Tahu", icon: Food.Tofu, pricePerKg: 15000 },
-  kecap: { name: "Kecap manis", icon: Food.Sauce, pricePerKg: 25000 },
-  tepung: { name: "Tepung terigu", icon: Food.Flour, pricePerKg: 14000 },
-  timun: { name: "Timun", icon: Food.Cucumber, pricePerKg: 12000 },
-  garam: { name: "Garam", icon: Food.Salt, pricePerKg: 8000 },
-  teh: { name: "Teh", icon: Food.Tea, pricePerKg: 80000 },
-  santan: { name: "Santan", icon: Food.Coconut, pricePerKg: 30000 },
-  nasi: { name: "Nasi", icon: Food.Rice, pricePerKg: 5000 },
-};
 
 export enum Formula {
   Margin = "margin",
@@ -222,3 +188,15 @@ export const FORMULAS: Record<Formula, { title: string; text: string; formula: s
 };
 
 export const MENU_ICONS = [Food.Dish, Food.Chicken, Food.Rice, Food.Noodles, Food.Salad, Food.Soup, Food.Egg, Food.Fish, Food.Skewer, Food.Coffee];
+
+export const ERROR_MESSAGES: Record<string, string> = {
+  EMAIL_TAKEN: "Email ini sudah terdaftar. Silakan masuk.",
+  INVALID_CREDENTIALS: "Email atau kata sandi salah.",
+  UNAUTHORIZED: "Sesi habis. Silakan masuk lagi.",
+  ERROR_VALIDATION: "Isian belum benar. Cek lagi.",
+  NETWORK_ERROR: "Server tidak bisa dihubungi. Cek koneksi lalu coba lagi.",
+  MENU_NOT_FOUND: "Menu tidak ditemukan.",
+  NOTA_NOT_FOUND: "Catatan tidak ditemukan.",
+  UNKNOWN_COMMODITY: "Ada bahan yang tidak dikenal.",
+};
+export const DEFAULT_ERROR = "Gagal menyimpan. Coba lagi.";

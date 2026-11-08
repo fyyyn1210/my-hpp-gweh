@@ -9,8 +9,9 @@ import PageHead from "@/components/PageHead.vue";
 import SourceTag from "@/components/SourceTag.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
 import { useStore } from "@/lib/store";
-import { hpp, ingredientPriceInfo, marginSteps, menuMargin, parseRecipeText, SAMPLE_RECIPE, statusOf, suggestPrice } from "@/lib/engine";
-import { Food, Formula, MARGIN_CHOICES, MENU_ICONS, PARSE_DELAY_MS, TODAY, UNIT_LABELS } from "@/lib/constants";
+import { api } from "@/lib/api";
+import { hpp, ingredientPriceInfo, marginSteps, menuMargin, SAMPLE_RECIPE, statusOf, suggestPrice } from "@/lib/engine";
+import { Food, Formula, MARGIN_CHOICES, MENU_ICONS, TODAY, UNIT_LABELS } from "@/lib/constants";
 import { percent, rupiah, thousands, uid } from "@/lib/format";
 import { Unit, type Ingredient, type Menu } from "@/lib/types";
 
@@ -56,13 +57,17 @@ const useSample = () => {
   recipeText.value = SAMPLE_RECIPE;
 };
 
-const parse = () => {
+const parse = async () => {
   parsing.value = true;
-  setTimeout(() => {
-    ingredients.value = parseRecipeText(recipeText.value);
-    parsing.value = false;
+  try {
+    const parsed = await api<Array<Omit<Ingredient, "id">>>("/recipes/parse", "POST", { text: recipeText.value });
+    ingredients.value = parsed.map((item) => ({ ...item, id: uid("ing") }));
     step.value = 2;
-  }, PARSE_DELAY_MS);
+  } catch (error) {
+    store.report(error);
+  } finally {
+    parsing.value = false;
+  }
 };
 
 const toPrice = () => {
@@ -87,15 +92,19 @@ const removeRow = (id: string) => {
   ingredients.value = ingredients.value.filter((item) => item.id !== id);
 };
 
-const save = () => {
-  const id = uid("menu");
-  store.addMenu({
-    ...draft.value,
-    id,
-    ingredients: ingredients.value.map((item) => ({ ...item, needsCheck: false })),
-  });
-  store.showToast("Menu tersimpan");
-  router.replace(`/menu/${id}`);
+const saving = ref(false);
+
+const save = async () => {
+  saving.value = true;
+  try {
+    const id = await store.addMenu({ ...draft.value, name: name.value.trim() || draft.value.name });
+    store.showToast("Menu tersimpan");
+    router.replace(`/menu/${id}`);
+  } catch (error) {
+    store.report(error);
+  } finally {
+    saving.value = false;
+  }
 };
 </script>
 
@@ -221,7 +230,7 @@ const save = () => {
         </section>
         <div class="grid grid-cols-2 gap-3">
           <button class="btn btn-white" @click="step = 2">Kembali</button>
-          <button class="btn" :disabled="!canSave" @click="save">Simpan menu</button>
+          <button class="btn" :disabled="!canSave || saving" @click="save">{{ saving ? "Menyimpan..." : "Simpan menu" }}</button>
         </div>
       </motion.div>
     </AnimatePresence>

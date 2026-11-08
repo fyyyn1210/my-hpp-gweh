@@ -1,17 +1,17 @@
-- drizzle schemas empty: add HPP tables (commodities, prices, menus, recipes, alerts)
-- auth module not copied: no user model decided yet (sample auth is single-admin via settings table)
-- settings util/schema not copied: add if needed
-- price-ingest, recipe-parser, hpp-engine, llm-provider, notifier modules not built
-- ClientTimezone enum guessed (Asia/Jakarta, UTC): confirm
-- web: Vue (not Next.js as in concept doc), all data dummy (src/data, seeded price series); no API integration
-- web: price series, recipe parser, explanation and substitutes are local fakes (src/lib/engine.ts, src/data): replace with API
-- web: community prices are generated from fake contributors (src/data/community.ts): replace with real opt-in nota data; no fake contributors in demo video
-- web: nota day stored as relative day index (state.notas[].day), not ISO date: switch to real dates with API
-- web: catering page removed, assistant (/tanya) answers catering quotes via engine `cateringQuote`; buffer uses 120-day dummy PIHPS history, needs real multi-year history
-- web: no PWA manifest/service worker, no real Telegram link, no unit tests
+- llm-provider (AI engine) and notifier (Telegram bot, FCM push) not built; Telegram link in Settings is still a local dummy
+- price-ingest only has a dummy PIHPS generator (`bun run db:seed`, src/modules/commodities/pihps.dummy.ts): add real PIHPS fetch + daily job; prices are national, not per city/province
+- ClientTimezone enum guessed (Asia/Jakarta, UTC): confirm; server day boundaries are UTC, not WIB
+- web: Vue (not Next.js as in concept doc)
+- hpp engine duplicated in web (src/lib/engine.ts) and server (src/modules/hpp/hpp.engine.ts): keep formulas in sync or move to a shared package
+- web: explanation, substitutes (src/data/substitutes.ts) and catering quote run in the browser only
+- community price = every shared nota of other users in the same city within 7 days, no per-user dedupe; empty until real users share
+- catering buffer uses 120-day dummy PIHPS history, needs real multi-year history
+- web: no PWA manifest/service worker, no unit tests for views
 - web: units grams (butir 60g, siung 5g, etc.) are rough guesses: confirm with real conversion table
-- web: no history of alarms per day, no push (FCM)
+- alerts computed live on each request, ids stable per menu/commodity (once read stays read), no history, no push
 - web: assistant (src/lib/assistant.ts) understands text with keyword regex, not LLM: replace with server agent loop + tool calling (see "Rancangan Asisten AI.md"); chat history in memory only, lost on reload
 - web: assistant has no daily message limit, no number guard, no Telegram channel, no nota photo yet
-- web: login/register local only (email + password, accounts in localStorage, FNV hash is not secure, no email verification, all accounts share one demo dataset, demo button skips password): replace with server auth + JWT
+- auth: stateless refresh JWT (no server-side revoke/logout), no email verification or password reset, no rate limit; POST /auth/demo logs anyone into one shared demo account: disable for production
+- register copies sample menus + notas (data contoh) into every new account
+- server tests (`bun test`) need a local Postgres db with migrations + seed (DATABASE_SSL=false)
 - web: food icons onion, garlic, oil/kecap bottle, sugar jar, salt, cucumber are hand-drawn SVG (src/components/FoodIcon.vue); tofu/tempe uses cube icon

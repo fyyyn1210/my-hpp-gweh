@@ -1,12 +1,9 @@
 import { COMMODITY_MAP, commoditySeries } from "@/data/commodities";
-import { COMMUNITY } from "@/data/community";
 import { SUBSTITUTES } from "@/data/substitutes";
 import {
-  Food,
   CATERING_PERCENTILE,
   COMMUNITY_MIN,
   COMMUNITY_WINDOW,
-  MANUAL_PRICE_HINTS,
   NOTA_MAX_AGE,
   OUTLIER_HIGH,
   OUTLIER_LOW,
@@ -14,17 +11,15 @@ import {
   RISK_MEDIUM,
   SUBSTITUTE_TRIGGER,
   TODAY,
-  UNIT_ALIASES,
   UNIT_GRAMS,
   WEEK,
 } from "./constants";
-import { clamp, dayLabel, percent, rupiah, uid } from "./format";
+import { clamp, dayLabel, percent, rupiah } from "./format";
 import { state } from "./state";
 import {
   PriceSource,
   RiskLevel,
   Status,
-  Unit,
   type Commodity,
   type CommunityStats,
   type PriceInfo,
@@ -59,14 +54,9 @@ export const latestNota = (commodityId: string, day = TODAY) =>
     .sort((a, b) => b.day - a.day)[0] ?? null;
 
 export const communityStats = (commodity: Commodity, day = TODAY): CommunityStats | null => {
-  const config = COMMUNITY[commodity.id];
-  const votes: number[] = [];
-  for (let index = 0; index < (config?.contributors ?? 0); index++) {
-    const voteDay = day - (index % COMMUNITY_WINDOW);
-    const spread = (((index * 37 + commodity.seed) % 9) - 4) / 100;
-    votes.push(Math.round((pihpsPrice(commodity, voteDay) * (config.factor + spread)) / 500) * 500);
-  }
-  if (config?.outlier) votes.push(pihpsPrice(commodity, day) * config.outlier);
+  const votes = state.votes
+    .filter((vote) => vote.commodityId === commodity.id && vote.day <= day && day - vote.day < COMMUNITY_WINDOW)
+    .map((vote) => vote.pricePerKg);
   if (state.shareCommunity) {
     const own = state.notas
       .filter((nota) => nota.shared && nota.commodityId === commodity.id && nota.day <= day && day - nota.day < COMMUNITY_WINDOW)
@@ -326,10 +316,6 @@ export const cateringQuote = (menu: Menu, portions: number, daysAhead: number, t
   };
 };
 
-export interface ParsedIngredient extends Ingredient {
-  needsCheck: boolean;
-}
-
 export const findCommodity = (name: string): Commodity | null => {
   const lowered = name.toLowerCase();
   let best: { commodity: Commodity; length: number } | null = null;
@@ -341,69 +327,6 @@ export const findCommodity = (name: string): Commodity | null => {
     }
   }
   return best?.commodity ?? null;
-};
-
-const FRACTIONS: Record<string, number> = { "½": 0.5, "¼": 0.25, "¾": 0.75, setengah: 0.5 };
-
-const parseQty = (raw: string): number | null => {
-  const text = raw.trim().toLowerCase().replace(",", ".");
-  if (FRACTIONS[text] !== undefined) return FRACTIONS[text];
-  const mixed = text.match(/^(\d+)\s*(½|¼|¾)$/);
-  if (mixed) return Number(mixed[1]) + FRACTIONS[mixed[2]];
-  const fraction = text.match(/^(\d+)\/(\d+)$/);
-  if (fraction) return Number(fraction[1]) / Number(fraction[2]);
-  const number = Number(text);
-  return Number.isFinite(number) && text !== "" ? number : null;
-};
-
-export const parseRecipeText = (text: string): ParsedIngredient[] => {
-  const lines = text
-    .split(/\n|;|,(?=\s*\d)/)
-    .map((line) => line.replace(/^[\s\-*•\d.)]+(?=\D)/, (match) => (/\d/.test(match) ? match : "")).trim())
-    .filter(Boolean);
-  const result: ParsedIngredient[] = [];
-  for (const line of lines) {
-    const match = line.match(/^(\d+(?:[.,]\d+)?(?:\s*[½¼¾]|\/\d+)?|½|¼|¾|setengah)\s*([a-zA-Z]+)?\s+(.+)$/i);
-    let qty: number | null = null;
-    let unit: Unit = Unit.Gram;
-    let name = line;
-    let needsCheck = false;
-    if (match) {
-      qty = parseQty(match[1]);
-      const unitWord = (match[2] ?? "").toLowerCase();
-      if (unitWord && UNIT_ALIASES[unitWord]) {
-        unit = UNIT_ALIASES[unitWord];
-        name = match[3];
-      } else {
-        unit = Unit.Buah;
-        name = `${match[2] ?? ""} ${match[3]}`.trim();
-        needsCheck = true;
-      }
-    } else {
-      needsCheck = true;
-      qty = 1;
-      unit = Unit.Sdm;
-    }
-    if (qty === null) {
-      qty = 1;
-      needsCheck = true;
-    }
-    name = name.replace(/\s+/g, " ").trim();
-    const commodity = findCommodity(name);
-    const hintKey = Object.keys(MANUAL_PRICE_HINTS).find((key) => name.toLowerCase().includes(key));
-    const hint = hintKey ? MANUAL_PRICE_HINTS[hintKey] : null;
-    result.push({
-      id: uid("ing"),
-      name: commodity ? commodity.name : hint ? hint.name : name.charAt(0).toUpperCase() + name.slice(1),
-      icon: commodity ? commodity.icon : hint ? hint.icon : Food.Ingredient,
-      qty,
-      unit,
-      commodityId: commodity ? commodity.id : null,
-      manualPricePerKg: commodity ? null : hint ? hint.pricePerKg : null,
-      needsCheck: needsCheck || (!commodity && !hint),
-    });
-  }
-  return result;
 };
 
 export const SAMPLE_RECIPE = `150 gram daging ayam

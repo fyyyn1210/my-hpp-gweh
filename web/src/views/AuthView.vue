@@ -20,24 +20,29 @@ const city = ref(CITIES[0]);
 const shareCommunity = ref(true);
 const showPassword = ref(false);
 const error = ref("");
+const busy = ref(false);
+
+const finish = async (request: Promise<string | null>) => {
+  busy.value = true;
+  const failure = await request;
+  busy.value = false;
+  if (failure) error.value = failure;
+  else router.replace("/");
+};
 
 const submit = () => {
   const normalized = normalizeEmail(email.value);
   if (joining.value && !name.value.trim()) return (error.value = "Isi nama panggilan Anda.");
   if (!normalized) return (error.value = "Email belum benar. Contoh: busari@gmail.com.");
   if (password.value.length < PASSWORD_MIN) return (error.value = `Kata sandi minimal ${PASSWORD_MIN} karakter.`);
-  const failure = joining.value
-    ? store.register({ email: normalized, name: name.value.trim(), city: city.value }, password.value)
-    : store.login(normalized, password.value);
-  if (failure) return (error.value = failure);
-  if (joining.value) store.state.shareCommunity = shareCommunity.value;
-  router.replace("/");
+  finish(
+    joining.value
+      ? store.register({ email: normalized, name: name.value.trim(), city: city.value, shareCommunity: shareCommunity.value }, password.value)
+      : store.login(normalized, password.value),
+  );
 };
 
-const demo = () => {
-  store.loginDemo();
-  router.replace("/");
-};
+const demo = () => finish(store.loginDemo());
 </script>
 
 <template>
@@ -98,7 +103,7 @@ const demo = () => {
 
       <p v-if="error" class="rounded-field bg-danger-soft px-4 py-3 text-small text-danger" role="alert">{{ error }}</p>
 
-      <button type="submit" class="btn w-full">{{ joining ? "Daftar" : "Masuk" }}<Icon name="next" :size="20" /></button>
+      <button type="submit" class="btn w-full" :disabled="busy">{{ busy ? "Sebentar..." : joining ? "Daftar" : "Masuk" }}<Icon v-if="!busy" name="next" :size="20" /></button>
     </form>
 
     <p class="text-center text-ink-2">
@@ -107,7 +112,7 @@ const demo = () => {
     </p>
 
     <div v-if="!joining" class="mt-auto flex flex-col gap-2 pt-2">
-      <button class="btn btn-white w-full" @click="demo"><Icon name="store" :size="20" />Coba akun demo</button>
+      <button class="btn btn-white w-full" :disabled="busy" @click="demo"><Icon name="store" :size="20" />Coba akun demo</button>
       <p class="text-center text-tiny text-ink-2">Tanpa daftar. Memakai data contoh warung Bu Sari.</p>
     </div>
   </section>

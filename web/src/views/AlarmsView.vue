@@ -9,7 +9,7 @@ import { useStore } from "@/lib/store";
 import { AlarmKind, Status } from "@/lib/types";
 
 const router = useRouter();
-const { alarms, state, markAlarmRead, markAllRead, getMenu } = useStore();
+const { alarms, markAlarmRead, markAllRead, getMenu } = useStore();
 
 const tab = ref<"all" | AlarmKind>("all");
 const tabs: Array<{ key: "all" | AlarmKind; label: string }> = [
@@ -19,7 +19,7 @@ const tabs: Array<{ key: "all" | AlarmKind; label: string }> = [
 ];
 
 const items = computed(() => alarms.value.filter((alarm) => tab.value === "all" || alarm.kind === tab.value));
-const isUnread = (id: string) => !state.readAlarms.includes(id);
+const isUnread = (id: string) => alarms.value.some((alarm) => alarm.id === id && !alarm.read);
 
 const open = (id: string, menuId: string) => {
   markAlarmRead(id);
