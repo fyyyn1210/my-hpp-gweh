@@ -6,3 +6,4 @@ logs
 *.log
 *.bun
 .DS_Store
+dist

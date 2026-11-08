@@ -1,4 +1,4 @@
-### Ini Projek AI vid generation
+### Ini Projek Hackathon HPP
 
 ### Rule
     1. Jangan Mengunakan commentar, langsung saja code
