@@ -1,3 +1,4 @@
+import { Food } from "@/lib/constants";
 import { TODAY } from "@/lib/constants";
 import { Unit, type Commodity } from "@/lib/types";
 
@@ -5,7 +6,7 @@ export const COMMODITIES: Commodity[] = [
   {
     id: "cabai-rawit",
     name: "Cabai rawit merah",
-    emoji: "🌶️",
+    icon: Food.Chili,
     priceUnit: "kg",
     basePrice: 42000,
     trend: 0.95,
@@ -17,7 +18,7 @@ export const COMMODITIES: Commodity[] = [
   {
     id: "cabai-merah",
     name: "Cabai merah keriting",
-    emoji: "🫑",
+    icon: Food.Pepper,
     priceUnit: "kg",
     basePrice: 40000,
     trend: 0.45,
@@ -29,7 +30,7 @@ export const COMMODITIES: Commodity[] = [
   {
     id: "bawang-merah",
     name: "Bawang merah",
-    emoji: "🧅",
+    icon: Food.Onion,
     priceUnit: "kg",
     basePrice: 33000,
     trend: 0.25,
@@ -41,7 +42,7 @@ export const COMMODITIES: Commodity[] = [
   {
     id: "bawang-putih",
     name: "Bawang putih",
-    emoji: "🧄",
+    icon: Food.Garlic,
     priceUnit: "kg",
     basePrice: 36000,
     trend: -0.04,
@@ -52,7 +53,7 @@ export const COMMODITIES: Commodity[] = [
   {
     id: "ayam",
     name: "Daging ayam ras",
-    emoji: "🍗",
+    icon: Food.Chicken,
     priceUnit: "kg",
     basePrice: 38000,
     trend: 0.06,
@@ -63,7 +64,7 @@ export const COMMODITIES: Commodity[] = [
   {
     id: "telur",
     name: "Telur ayam ras",
-    emoji: "🥚",
+    icon: Food.Egg,
     priceUnit: "kg",
     basePrice: 30000,
     trend: 0.05,
@@ -74,7 +75,7 @@ export const COMMODITIES: Commodity[] = [
   {
     id: "sapi",
     name: "Daging sapi",
-    emoji: "🥩",
+    icon: Food.Beef,
     priceUnit: "kg",
     basePrice: 135000,
     trend: 0.015,
@@ -85,7 +86,7 @@ export const COMMODITIES: Commodity[] = [
   {
     id: "beras",
     name: "Beras medium",
-    emoji: "🍚",
+    icon: Food.Rice,
     priceUnit: "kg",
     basePrice: 14000,
     trend: 0.012,
@@ -96,7 +97,7 @@ export const COMMODITIES: Commodity[] = [
   {
     id: "minyak",
     name: "Minyak goreng",
-    emoji: "🛢️",
+    icon: Food.Oil,
     priceUnit: "liter",
     basePrice: 19000,
     trend: 0.02,
@@ -107,7 +108,7 @@ export const COMMODITIES: Commodity[] = [
   {
     id: "gula",
     name: "Gula pasir",
-    emoji: "🍬",
+    icon: Food.Sugar,
     priceUnit: "kg",
     basePrice: 17500,
     trend: -0.005,

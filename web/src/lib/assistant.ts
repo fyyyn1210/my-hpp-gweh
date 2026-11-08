@@ -115,7 +115,7 @@ const worstMenu = () => [...state.menus].sort((a, b) => headroom(a) - headroom(b
 
 const pickMenu = (question: string, text: string, menus: Menu[]): Answer => ({
   text: question,
-  choices: (menus.length ? menus : state.menus).map((menu) => ({ label: `${menu.emoji} ${menu.name}`, text: `${text} ${menu.name.toLowerCase()}` })),
+  choices: (menus.length ? menus : state.menus).map((menu) => ({ label: menu.name, text: `${text} ${menu.name.toLowerCase()}` })),
   ask: true,
 });
 
@@ -129,7 +129,7 @@ const understand = (text: string): Answer | null => {
       const used = new Set(state.menus.flatMap((item) => item.ingredients.map((ingredient) => ingredient.commodityId)));
       return {
         text: "Bahan apa yang dibeli?",
-        choices: COMMODITIES.filter((item) => used.has(item.id)).map((item) => ({ label: `${item.emoji} ${item.name}`, text: `${text} ${item.name.toLowerCase()}` })),
+        choices: COMMODITIES.filter((item) => used.has(item.id)).map((item) => ({ label: item.name, text: `${text} ${item.name.toLowerCase()}` })),
         ask: true,
       };
     }

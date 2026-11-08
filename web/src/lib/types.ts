@@ -1,3 +1,4 @@
+import type { Food } from "./constants";
 export enum Unit {
   Gram = "gram",
   Kg = "kg",
@@ -39,7 +40,7 @@ export enum PriceSource {
 export interface Commodity {
   id: string;
   name: string;
-  emoji: string;
+  icon: Food;
   priceUnit: string;
   basePrice: number;
   trend: number;
@@ -52,7 +53,7 @@ export interface Commodity {
 export interface Ingredient {
   id: string;
   name: string;
-  emoji: string;
+  icon: Food;
   qty: number;
   unit: Unit;
   commodityId: string | null;
@@ -63,7 +64,7 @@ export interface Ingredient {
 export interface Menu {
   id: string;
   name: string;
-  emoji: string;
+  icon: Food;
   sellPrice: number;
   priceSetDay: number;
   targetMargin: number;
@@ -91,6 +92,13 @@ export interface AlarmItem {
   commodityId?: string;
   severity: Status;
   active: boolean;
+}
+
+export interface Account {
+  email: string;
+  passwordHash: string;
+  name: string;
+  city: string;
 }
 
 export interface Nota {

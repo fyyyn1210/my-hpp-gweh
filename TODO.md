@@ -8,8 +8,10 @@
 - web: community prices are generated from fake contributors (src/data/community.ts): replace with real opt-in nota data; no fake contributors in demo video
 - web: nota day stored as relative day index (state.notas[].day), not ISO date: switch to real dates with API
 - web: catering page removed, assistant (/tanya) answers catering quotes via engine `cateringQuote`; buffer uses 120-day dummy PIHPS history, needs real multi-year history
-- web: no PWA manifest/service worker, no auth or guest mode, no real Telegram link, no unit tests
+- web: no PWA manifest/service worker, no real Telegram link, no unit tests
 - web: units grams (butir 60g, siung 5g, etc.) are rough guesses: confirm with real conversion table
 - web: no history of alarms per day, no push (FCM)
 - web: assistant (src/lib/assistant.ts) understands text with keyword regex, not LLM: replace with server agent loop + tool calling (see "Rancangan Asisten AI.md"); chat history in memory only, lost on reload
 - web: assistant has no daily message limit, no number guard, no Telegram channel, no nota photo yet
+- web: login/register local only (email + password, accounts in localStorage, FNV hash is not secure, no email verification, all accounts share one demo dataset, demo button skips password): replace with server auth + JWT
+- web: food icons onion, garlic, oil/kecap bottle, sugar jar, salt, cucumber are hand-drawn SVG (src/components/FoodIcon.vue); tofu/tempe uses cube icon

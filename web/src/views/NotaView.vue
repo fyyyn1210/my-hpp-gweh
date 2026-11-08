@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FoodIcon from "@/components/FoodIcon.vue";
 import Tip from "@/components/Tip.vue";
 import { AnimatePresence, motion } from "motion-v";
 import { computed, ref } from "vue";
@@ -76,7 +77,7 @@ const history = computed(() => [...state.notas].sort((a, b) => b.day - a.day));
             class="flex min-h-[132px] flex-col items-start gap-1.5 rounded-card bg-white p-4 text-left shadow-soft transition-transform active:scale-[0.97]"
             @click="pick(commodity)"
           >
-            <span class="avatar">{{ commodity.emoji }}</span>
+            <span class="avatar"><FoodIcon :name="commodity.icon" /></span>
             <span class="mt-1 leading-tight font-semibold">{{ commodity.name }}</span>
             <span v-if="usedIds.has(commodity.id)" class="text-tiny text-ink-2">dipakai di menu</span>
           </button>
@@ -92,7 +93,7 @@ const history = computed(() => [...state.notas].sort((a, b) => b.day - a.day));
         :exit="{ opacity: 0, x: 16 }"
       >
         <div class="flex items-center gap-3">
-          <span class="avatar">{{ selected.emoji }}</span>
+          <span class="avatar"><FoodIcon :name="selected.icon" /></span>
           <div class="min-w-0 flex-1">
             <h2>{{ selected.name }}</h2>
             <p class="text-tiny text-ink-2">Dipakai di {{ affected }} menu Anda</p>
@@ -154,7 +155,7 @@ const history = computed(() => [...state.notas].sort((a, b) => b.day - a.day));
       <div v-if="!history.length" class="card text-ink-2">Belum ada catatan.</div>
       <div v-else class="list">
         <motion.div v-for="nota in history" :key="nota.id" layout class="list-row">
-          <span class="avatar avatar-sm">{{ commodityMap[nota.commodityId].emoji }}</span>
+          <span class="avatar avatar-sm"><FoodIcon :name="commodityMap[nota.commodityId].icon" :size="22" /></span>
           <div class="min-w-0 flex-1">
             <strong>{{ commodityMap[nota.commodityId].name }}</strong>
             <p class="text-tiny text-ink-2">{{ dayLabel(nota.day) }}<template v-if="nota.shared"> · dibagikan</template></p>

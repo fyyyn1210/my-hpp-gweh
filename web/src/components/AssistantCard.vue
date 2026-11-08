@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FoodIcon from "./FoodIcon.vue";
 import Tip from "./Tip.vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
@@ -104,7 +105,7 @@ const copyOffer = async () => {
 <template>
   <div v-if="card.kind === CardKind.Quote && quote && menu" class="rounded-[30px] bg-white p-1.5 shadow-soft">
     <div class="card-lime flex flex-col gap-1.5">
-      <p class="text-small">{{ menu.emoji }} {{ menu.name }} · {{ card.portions }} porsi</p>
+      <p class="text-small">{{ menu.name }} · {{ card.portions }} porsi</p>
       <p class="big-number my-1 text-[48px]"><span class="cur">Rp</span>{{ thousands(quote.buffered.rounded) }}</p>
       <p class="text-small">per porsi · total <b class="num">{{ rupiah(quote.totalBuffered) }}</b></p>
       <div class="mt-1.5 grid grid-cols-3 gap-2 rounded-field bg-white/70 px-3 py-3">
@@ -124,7 +125,7 @@ const copyOffer = async () => {
     </div>
     <div class="flex flex-col gap-2 px-3 pt-3 pb-2">
       <p v-for="line in quote.lines.filter((item) => item.risk >= 1).slice(0, 2)" :key="line.ingredient.id" class="text-tiny text-ink-2">
-        {{ line.ingredient.emoji }} {{ line.ingredient.name }} bisa naik sampai <Tip :kind="Formula.Buffer">{{ percent(line.buffer, 0) }}</Tip>
+        {{ line.ingredient.name }} bisa naik sampai <Tip :kind="Formula.Buffer">{{ percent(line.buffer, 0) }}</Tip>
       </p>
       <button class="btn w-full" @click="copyOffer"><Icon name="copy" :size="20" />Salin teks penawaran</button>
     </div>
@@ -132,7 +133,7 @@ const copyOffer = async () => {
 
   <div v-else-if="card.kind === CardKind.Status && menu" class="card flex flex-col gap-3">
     <div class="flex items-center gap-3">
-      <span class="avatar avatar-sm">{{ menu.emoji }}</span>
+      <span class="avatar avatar-sm"><FoodIcon :name="menu.icon" :size="22" /></span>
       <strong class="min-w-0 flex-1">{{ menu.name }}</strong>
       <StatusBadge :status="statusOf(menu)" />
     </div>
@@ -185,7 +186,7 @@ const copyOffer = async () => {
 
   <div v-else-if="card.kind === CardKind.Price && price && commodity" class="card flex flex-col gap-3">
     <div class="flex items-center gap-3">
-      <span class="avatar avatar-sm">{{ commodity.emoji }}</span>
+      <span class="avatar avatar-sm"><FoodIcon :name="commodity.icon" :size="22" /></span>
       <strong class="min-w-0 flex-1">{{ commodity.name }}</strong>
       <TrendTag :value="price.change" />
     </div>
@@ -199,7 +200,7 @@ const copyOffer = async () => {
 
   <div v-else-if="card.kind === CardKind.NotaDraft && nota && commodity" class="card flex flex-col gap-3" :class="!card.done && 'ring-2 ring-ink'">
     <div class="flex items-center gap-3">
-      <span class="avatar avatar-sm">{{ commodity.emoji }}</span>
+      <span class="avatar avatar-sm"><FoodIcon :name="commodity.icon" :size="22" /></span>
       <div class="min-w-0 flex-1">
         <strong>{{ commodity.name }}</strong>
         <p class="text-tiny text-ink-2">{{ card.amount }} {{ nota.unit.label }} · {{ rupiah(card.total) }} · {{ dayLabel(TODAY) }}</p>
@@ -218,7 +219,7 @@ const copyOffer = async () => {
 
   <div v-else-if="card.kind === CardKind.PriceDraft && menu" class="card flex flex-col gap-3" :class="!card.done && 'ring-2 ring-ink'">
     <div class="flex items-center gap-3">
-      <span class="avatar avatar-sm">{{ menu.emoji }}</span>
+      <span class="avatar avatar-sm"><FoodIcon :name="menu.icon" :size="22" /></span>
       <strong class="min-w-0 flex-1">{{ menu.name }}</strong>
     </div>
     <div class="grid grid-cols-2 gap-2 rounded-field bg-mist px-3.5 py-3">
@@ -237,7 +238,7 @@ const copyOffer = async () => {
 
   <div v-else-if="card.kind === CardKind.Ranking" class="list">
     <button v-for="item in ranking" :key="item.menu.id" class="list-row text-left" @click="router.push(`/menu/${item.menu.id}`)">
-      <span class="avatar avatar-sm">{{ item.menu.emoji }}</span>
+      <span class="avatar avatar-sm"><FoodIcon :name="item.menu.icon" :size="22" /></span>
       <div class="min-w-0 flex-1">
         <strong>{{ item.menu.name }}</strong>
         <p class="text-tiny text-ink-2">Untung <Tip :kind="Formula.Margin" :calc="marginSteps(item.menu.sellPrice, hpp(item.menu))">{{ percent(menuMargin(item.menu), 0) }}</Tip> · {{ item.vuln.action }}</p>

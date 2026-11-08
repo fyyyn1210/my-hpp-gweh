@@ -4,6 +4,8 @@ import {
   DEFAULT_EXTRA_COST,
   DEFAULT_TARGET_MARGIN,
   DEFAULT_THRESHOLD,
+  DEMO_EMAIL,
+  Food,
   SURGE_THRESHOLD,
   TODAY,
   WEEK,
@@ -17,9 +19,10 @@ import {
   vulnerability,
   type Vulnerability,
 } from "@/lib/engine";
+import { hashPassword } from "@/lib/auth";
 import { dayLabel, percent, points, rupiah, uid } from "@/lib/format";
 import { defaults, state } from "@/lib/state";
-import { AlarmKind, Status, type AlarmItem, type Menu, type Nota } from "@/lib/types";
+import { AlarmKind, Status, type Account, type AlarmItem, type Menu, type Nota } from "@/lib/types";
 
 const toast = ref<string | null>(null);
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -146,13 +149,39 @@ const unlinkTelegram = () => {
 };
 
 const resetDemo = () => {
-  Object.assign(state, defaults(), { onboardingDone: true });
+  const { accounts, session, ownerName, city } = state;
+  Object.assign(state, defaults(), { onboardingDone: true, accounts, session, ownerName, city });
   showToast("Data contoh dikembalikan");
+};
+
+const register = (account: Omit<Account, "passwordHash">, password: string) => {
+  if (account.email === DEMO_EMAIL || state.accounts.some((item) => item.email === account.email)) return "Email ini sudah terdaftar. Silakan masuk.";
+  state.accounts.push({ ...account, passwordHash: hashPassword(password) });
+  signIn(account.email, account.name, account.city);
+  return null;
+};
+
+const login = (email: string, password: string) => {
+  const account = state.accounts.find((item) => item.email === email);
+  if (!account || account.passwordHash !== hashPassword(password)) return "Email atau kata sandi salah.";
+  signIn(account.email, account.name, account.city);
+  return null;
+};
+
+const loginDemo = () => signIn(DEMO_EMAIL, defaults().ownerName, defaults().city);
+
+const signIn = (email: string, name: string, city: string) => {
+  Object.assign(state, { session: email, ownerName: name, city, onboardingDone: true });
+  showToast(`Selamat datang, ${name}`);
+};
+
+const logout = () => {
+  state.session = null;
 };
 
 const newMenuTemplate = (): Omit<Menu, "id"> => ({
   name: "",
-  emoji: "🍽️",
+  icon: Food.Dish,
   sellPrice: 15000,
   priceSetDay: TODAY,
   targetMargin: DEFAULT_TARGET_MARGIN,
@@ -186,5 +215,9 @@ export const useStore = () => ({
   confirmTelegram,
   unlinkTelegram,
   resetDemo,
+  register,
+  login,
+  loginDemo,
+  logout,
   newMenuTemplate,
 });

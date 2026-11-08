@@ -1,12 +1,19 @@
 <script setup lang="ts">
+import { useRouter } from "vue-router";
 import Icon from "@/components/Icon.vue";
 import PageHead from "@/components/PageHead.vue";
 import { useStore } from "@/lib/store";
 import { CITIES, ROUNDING_STEPS } from "@/lib/constants";
 import { thousands } from "@/lib/format";
 
+const router = useRouter();
 const store = useStore();
 const { state } = store;
+
+const logout = () => {
+  store.logout();
+  router.replace("/masuk");
+};
 
 const tgName = "@HPPPintarBot";
 </script>
@@ -70,6 +77,12 @@ const tgName = "@HPPPintarBot";
       <p class="text-small">AI hanya membantu membaca resep dan menjelaskan. Semua hitungan uang dilakukan sistem, bukan AI.</p>
       <p class="text-small text-ink-2">Versi ini masih memakai data contoh dan menyimpan data di perangkat ini.</p>
       <button class="btn btn-outline w-full" @click="store.resetDemo"><Icon name="refresh" :size="20" />Kembalikan data contoh</button>
+    </section>
+
+    <section class="card flex flex-col gap-3.5">
+      <h2>Akun</h2>
+      <p class="text-small">Masuk dengan <b>{{ state.session }}</b></p>
+      <button class="btn btn-outline w-full" @click="logout"><Icon name="logout" :size="20" />Keluar</button>
     </section>
   </div>
 </template>

@@ -9,7 +9,9 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     { path: "/", name: "home", component: () => import("./views/HomeView.vue") },
-    { path: "/mulai", name: "onboarding", component: () => import("./views/OnboardingView.vue"), meta: { bare: true } },
+    { path: "/mulai", name: "onboarding", component: () => import("./views/OnboardingView.vue"), meta: { bare: true, guest: true } },
+    { path: "/masuk", name: "login", component: () => import("./views/AuthView.vue"), meta: { bare: true, guest: true } },
+    { path: "/daftar", name: "register", component: () => import("./views/AuthView.vue"), meta: { bare: true, guest: true } },
     { path: "/menu", name: "menus", component: () => import("./views/MenusView.vue") },
     { path: "/menu/baru", name: "menu-new", component: () => import("./views/MenuNewView.vue") },
     { path: "/menu/:id", name: "menu-detail", component: () => import("./views/MenuDetailView.vue"), props: true },
@@ -24,7 +26,8 @@ const router = createRouter({
 
 router.beforeEach((to) => {
   const { state } = useStore();
-  if (!state.onboardingDone && to.name !== "onboarding") return { name: "onboarding" };
+  if (!state.session && !to.meta.guest) return { name: state.onboardingDone ? "login" : "onboarding" };
+  if (state.session && to.meta.guest) return { name: "home" };
   return true;
 });
 

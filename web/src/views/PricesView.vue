@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FoodIcon from "@/components/FoodIcon.vue";
 import Tip from "@/components/Tip.vue";
 import { AnimatePresence, motion } from "motion-v";
 import { computed, ref } from "vue";
@@ -64,7 +65,7 @@ const detail = computed(() => {
 
     <div v-else class="list">
       <button v-for="item in list" :key="item.commodity.id" class="list-row active:bg-mist" @click="selected = item.commodity">
-        <span class="avatar">{{ item.commodity.emoji }}</span>
+        <span class="avatar"><FoodIcon :name="item.commodity.icon" /></span>
         <span class="flex min-w-0 flex-1 flex-col items-start gap-1.5">
           <strong>{{ item.commodity.name }}</strong>
           <SourceTag :source="item.info.source" :day="item.info.day" />
@@ -96,7 +97,7 @@ const detail = computed(() => {
           :transition="{ type: 'spring', stiffness: 320, damping: 32 }"
         >
           <div class="flex items-center gap-3">
-            <span class="avatar">{{ selected.emoji }}</span>
+            <span class="avatar"><FoodIcon :name="selected.icon" /></span>
             <div class="min-w-0 flex-1">
               <h2>{{ selected.name }}</h2>
               <p class="text-tiny text-ink-2">per {{ selected.priceUnit }}</p>
@@ -156,7 +157,7 @@ const detail = computed(() => {
           <div v-if="detail.usedBy.length" class="flex flex-col gap-1.5">
             <h3>Dipakai di menu Anda</h3>
             <div class="chips">
-              <RouterLink v-for="menu in detail.usedBy" :key="menu.id" :to="`/menu/${menu.id}`" class="chip inline-flex items-center gap-1.5">{{ menu.emoji }} {{ menu.name }}</RouterLink>
+              <RouterLink v-for="menu in detail.usedBy" :key="menu.id" :to="`/menu/${menu.id}`" class="chip inline-flex items-center gap-1.5"><FoodIcon :name="menu.icon" :size="18" />{{ menu.name }}</RouterLink>
             </div>
           </div>
 

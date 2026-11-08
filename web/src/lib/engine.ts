@@ -2,6 +2,7 @@ import { COMMODITY_MAP, commoditySeries } from "@/data/commodities";
 import { COMMUNITY } from "@/data/community";
 import { SUBSTITUTES } from "@/data/substitutes";
 import {
+  Food,
   CATERING_PERCENTILE,
   COMMUNITY_MIN,
   COMMUNITY_WINDOW,
@@ -394,7 +395,7 @@ export const parseRecipeText = (text: string): ParsedIngredient[] => {
     result.push({
       id: uid("ing"),
       name: commodity ? commodity.name : hint ? hint.name : name.charAt(0).toUpperCase() + name.slice(1),
-      emoji: commodity ? commodity.emoji : hint ? hint.emoji : "🥣",
+      icon: commodity ? commodity.icon : hint ? hint.icon : Food.Ingredient,
       qty,
       unit,
       commodityId: commodity ? commodity.id : null,

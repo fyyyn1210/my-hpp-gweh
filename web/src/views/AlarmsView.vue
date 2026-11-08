@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FoodIcon from "@/components/FoodIcon.vue";
 import { motion } from "motion-v";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
@@ -70,7 +71,7 @@ const open = (id: string, menuId: string) => {
           class="chip inline-flex items-center gap-1.5 bg-mist ring-0"
           @click="open(alarm.id, menuId)"
         >
-          {{ getMenu(menuId)?.emoji }} {{ alarm.menuIds.length === 1 ? "Lihat pilihan tindakan" : getMenu(menuId)?.name }}
+          <FoodIcon v-if="getMenu(menuId)" :name="getMenu(menuId)!.icon" :size="18" />{{ alarm.menuIds.length === 1 ? "Lihat pilihan tindakan" : getMenu(menuId)?.name }}
           <Icon name="next" :size="18" />
         </button>
       </div>

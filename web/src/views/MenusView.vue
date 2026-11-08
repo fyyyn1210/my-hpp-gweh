@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FoodIcon from "@/components/FoodIcon.vue";
 import Tip from "@/components/Tip.vue";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
@@ -74,7 +75,7 @@ const items = computed(() => {
       >
         <RouterLink :to="`/menu/${item.menu.id}`" class="flex flex-col gap-3 rounded-card bg-white p-4 shadow-soft transition-transform active:scale-[0.99]">
           <div class="flex items-center gap-3">
-            <span class="avatar">{{ item.menu.emoji }}</span>
+            <span class="avatar"><FoodIcon :name="item.menu.icon" /></span>
             <div class="min-w-0 flex-1">
               <h3>{{ item.menu.name }}</h3>
               <p class="num text-tiny text-ink-2">Jual {{ rupiah(item.menu.sellPrice) }} · modal {{ rupiah(hpp(item.menu)) }}</p>

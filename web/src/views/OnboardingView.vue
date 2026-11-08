@@ -5,7 +5,6 @@ import { useRouter } from "vue-router";
 import Icon, { type IconName } from "@/components/Icon.vue";
 import Logo from "@/components/Logo.vue";
 import { useStore } from "@/lib/store";
-import { CITIES } from "@/lib/constants";
 
 const router = useRouter();
 const { state } = useStore();
@@ -29,17 +28,16 @@ const slides: Array<{ icon: IconName; title: string; text: string }> = [
 ];
 
 const index = ref(0);
-const total = slides.length + 1;
-const onForm = computed(() => index.value === slides.length);
+const last = computed(() => index.value === slides.length - 1);
 
 const next = () => {
-  if (onForm.value) return finish();
+  if (last.value) return finish("/daftar");
   index.value += 1;
 };
 
-const finish = () => {
+const finish = (to: string) => {
   state.onboardingDone = true;
-  router.replace("/");
+  router.replace(to);
 };
 </script>
 
@@ -47,15 +45,14 @@ const finish = () => {
   <section class="flex min-h-[calc(100vh-44px)] flex-col gap-5.5">
     <div class="flex items-center justify-between">
       <Logo :size="48" />
-      <button v-if="!onForm" class="btn btn-sm btn-white" @click="index = slides.length">Lewati</button>
+      <button v-if="!last" class="btn btn-sm btn-white" @click="index = slides.length - 1">Lewati</button>
     </div>
     <div class="flex gap-1.5" aria-hidden="true">
-      <span v-for="i in total" :key="i" class="h-[5px] flex-1 rounded-full transition-colors" :class="i - 1 <= index ? 'bg-ink' : 'bg-ink/12'" />
+      <span v-for="i in slides.length" :key="i" class="h-[5px] flex-1 rounded-full transition-colors" :class="i - 1 <= index ? 'bg-ink' : 'bg-ink/12'" />
     </div>
 
     <AnimatePresence mode="wait">
       <motion.div
-        v-if="!onForm"
         :key="index"
         class="flex flex-1 flex-col justify-center gap-8"
         :initial="{ opacity: 0, x: 30 }"
@@ -72,31 +69,16 @@ const finish = () => {
           <p class="text-lg text-ink-2">{{ slides[index].text }}</p>
         </div>
       </motion.div>
-
-      <motion.div v-else key="form" class="card flex flex-1 flex-col gap-4" :initial="{ opacity: 0, y: 20 }" :animate="{ opacity: 1, y: 0 }">
-        <h1>Kenalan dulu</h1>
-        <div class="flex flex-col gap-2">
-          <label for="name" class="label">Nama panggilan</label>
-          <input id="name" v-model="state.ownerName" class="input" placeholder="Contoh: Bu Sari" />
-        </div>
-        <div class="flex flex-col gap-2">
-          <label for="city" class="label">Kota tempat usaha</label>
-          <select id="city" v-model="state.city" class="input">
-            <option v-for="city in CITIES" :key="city" :value="city">{{ city }}</option>
-          </select>
-        </div>
-        <label class="flex cursor-pointer items-center gap-3 rounded-field bg-mist px-4 py-3.5">
-          <span class="min-w-0 flex-1">
-            <strong>Ikut berbagi harga nota</strong>
-            <span class="block text-tiny text-ink-2">Tanpa nama warung. Bisa diubah nanti.</span>
-          </span>
-          <input v-model="state.shareCommunity" type="checkbox" class="toggle" />
-        </label>
-      </motion.div>
     </AnimatePresence>
 
-    <button class="btn w-full" :disabled="onForm && !state.ownerName.trim()" @click="next">
-      {{ onForm ? "Mulai pakai" : "Lanjut" }}<Icon name="next" :size="20" />
-    </button>
+    <div class="flex flex-col gap-3">
+      <button class="btn w-full" @click="next">
+        {{ last ? "Buat akun" : "Lanjut" }}<Icon name="next" :size="20" />
+      </button>
+      <p class="text-center text-ink-2">
+        Sudah punya akun?
+        <button class="font-semibold text-ink underline underline-offset-4" @click="finish('/masuk')">Masuk</button>
+      </p>
+    </div>
   </section>
 </template>

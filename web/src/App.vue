@@ -11,10 +11,10 @@ const { unreadCount, toast, state } = useStore();
 
 const bare = computed(() => Boolean(route.meta.bare));
 
-const tabs: Array<{ to: string; icon: IconName; label: string; main?: boolean }> = [
+const tabs: Array<{ to: string; icon: IconName; label: string }> = [
   { to: "/", icon: "home", label: "Beranda" },
   { to: "/menu", icon: "menu", label: "Menu" },
-  { to: "/tanya", icon: "chat", label: "Tanya", main: true },
+  { to: "/tanya", icon: "chat", label: "Tanya" },
   { to: "/harga", icon: "chart", label: "Harga" },
   { to: "/alarm", icon: "bell", label: "Peringatan" },
 ];
@@ -74,27 +74,24 @@ const isActive = (to: string) => (to === "/" ? route.path === "/" : route.path.s
 
       <nav
         v-if="!bare"
-        class="fixed bottom-3.5 left-1/2 z-20 flex w-[calc(100%-24px)] max-w-[520px] -translate-x-1/2 items-center rounded-full bg-white/95 p-1.5 shadow-lift backdrop-blur-md lg:hidden"
+        class="fixed bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center drop-shadow-[0_14px_22px_rgba(16,60,34,0.22)] lg:hidden"
         aria-label="Menu utama"
       >
         <RouterLink
           v-for="tab in tabs"
           :key="tab.to"
           :to="tab.to"
-          class="flex min-h-[62px] flex-1 flex-col items-center justify-center gap-px pt-[7px] pb-1.5"
-          :class="isActive(tab.to) ? 'text-ink' : 'text-ink-3'"
+          class="relative -mx-[3px] grid size-[62px] place-items-center rounded-full bg-white p-[7px]"
+          :aria-label="tab.label"
+          :title="tab.label"
         >
-          <span
-            class="relative grid place-items-center"
-            :class="tab.main && ['-mt-[22px] size-[52px] rounded-full text-white shadow-[0_10px_20px_-8px_rgba(16,21,17,0.6)]', isActive(tab.to) ? 'bg-brand' : 'bg-ink']"
-          >
-            <Icon :name="tab.icon" :size="tab.main ? 26 : 24" />
-            <b
-              v-if="tab.to === '/alarm' && unreadCount"
-              class="absolute -top-[5px] -right-[11px] grid h-[19px] min-w-[19px] place-items-center rounded-full bg-danger px-[5px] text-[11px] text-white ring-2 ring-white"
-            >{{ unreadCount }}</b>
+          <span class="grid size-full place-items-center rounded-full transition-colors" :class="isActive(tab.to) ? 'bg-ink text-white' : 'text-ink-2'">
+            <Icon :name="tab.icon" :size="24" :stroke="isActive(tab.to) ? 2 : 1.6" />
           </span>
-          <span class="text-[12.5px]" :class="isActive(tab.to) ? 'font-semibold' : 'font-medium'">{{ tab.label }}</span>
+          <b
+            v-if="tab.to === '/alarm' && unreadCount"
+            class="absolute top-1 right-1 grid h-[19px] min-w-[19px] place-items-center rounded-full bg-danger px-[5px] text-[11px] text-white ring-2 ring-white"
+          >{{ unreadCount }}</b>
         </RouterLink>
       </nav>
 

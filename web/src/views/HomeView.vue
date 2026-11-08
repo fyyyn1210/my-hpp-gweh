@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FoodIcon from "@/components/FoodIcon.vue";
 import Tip from "@/components/Tip.vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
@@ -139,7 +140,7 @@ const openAlarm = (menuIds: string[]) => router.push(menuIds.length === 1 ? `/me
           :transition="{ delay: index * 0.04 }"
         >
           <RouterLink to="/harga" class="flex h-full w-[156px] flex-col items-start gap-[5px] rounded-card bg-white p-4 shadow-soft">
-            <span class="avatar avatar-sm mb-1.5">{{ item.commodity.emoji }}</span>
+            <span class="avatar avatar-sm mb-1.5"><FoodIcon :name="item.commodity.icon" :size="22" /></span>
             <span class="min-h-[34px] text-tiny leading-tight text-ink-2">{{ item.commodity.name }}</span>
             <strong class="num text-[22px]">{{ thousands(item.info.price) }}<span class="text-tiny font-normal text-ink-2">/{{ item.commodity.priceUnit }}</span></strong>
             <TrendTag :value="item.change" class="text-tiny" />
@@ -160,7 +161,7 @@ const openAlarm = (menuIds: string[]) => router.push(menuIds.length === 1 ? `/me
       </div>
       <div class="list">
         <RouterLink v-for="item in topRisk" :key="item.menu.id" :to="`/menu/${item.menu.id}`" class="list-row active:bg-mist">
-          <span class="avatar">{{ item.menu.emoji }}</span>
+          <span class="avatar"><FoodIcon :name="item.menu.icon" /></span>
           <span class="min-w-0 flex-1">
             <strong class="block">{{ item.menu.name }}</strong>
             <span class="text-small text-ink-2">Untung <b class="num text-ink"><Tip :kind="Formula.Margin" :calc="marginSteps(item.menu.sellPrice, hpp(item.menu))">{{ percent(menuMargin(item.menu), 0) }}</Tip></b></span>

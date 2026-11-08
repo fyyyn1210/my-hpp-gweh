@@ -13,8 +13,10 @@ export const DEFAULT_TARGET_MARGIN = 0.25;
 export const DEFAULT_THRESHOLD = 0.2;
 export const DEFAULT_EXTRA_COST = 1000;
 export const ROUNDING_STEPS = [500, 1000];
-export const STORAGE_KEY = "hpp-pintar-state-v2";
+export const STORAGE_KEY = "hpp-pintar-state-v3";
 export const EXPLAIN_DELAY_MS = 900;
+export const PASSWORD_MIN = 6;
+export const DEMO_EMAIL = "demo@myhppgweh.id";
 export const SUGGEST_IDLE_MS = 3000;
 export const SUGGEST_MAX_WORDS = 3;
 export const PARSE_DELAY_MS = 700;
@@ -100,16 +102,45 @@ export const UNIT_ALIASES: Record<string, Unit> = {
   l: Unit.Liter,
 };
 
-export const MANUAL_PRICE_HINTS: Record<string, { name: string; emoji: string; pricePerKg: number }> = {
-  tempe: { name: "Tempe", emoji: "🟫", pricePerKg: 20000 },
-  tahu: { name: "Tahu", emoji: "⬜", pricePerKg: 15000 },
-  kecap: { name: "Kecap manis", emoji: "🍶", pricePerKg: 25000 },
-  tepung: { name: "Tepung terigu", emoji: "🌾", pricePerKg: 14000 },
-  timun: { name: "Timun", emoji: "🥒", pricePerKg: 12000 },
-  garam: { name: "Garam", emoji: "🧂", pricePerKg: 8000 },
-  teh: { name: "Teh", emoji: "🍵", pricePerKg: 80000 },
-  santan: { name: "Santan", emoji: "🥥", pricePerKg: 30000 },
-  nasi: { name: "Nasi", emoji: "🍚", pricePerKg: 5000 },
+export enum Food {
+  Chili = "chili",
+  Pepper = "pepper",
+  Onion = "onion",
+  Garlic = "garlic",
+  Chicken = "chicken",
+  Egg = "egg",
+  Beef = "beef",
+  Rice = "rice",
+  Oil = "oil",
+  Sugar = "sugar",
+  Flour = "flour",
+  Fish = "fish",
+  Cucumber = "cucumber",
+  Nut = "nut",
+  Noodles = "noodles",
+  Soup = "soup",
+  Tofu = "tofu",
+  Salt = "salt",
+  Sauce = "sauce",
+  Tea = "tea",
+  Coconut = "coconut",
+  Salad = "salad",
+  Skewer = "skewer",
+  Coffee = "coffee",
+  Dish = "dish",
+  Ingredient = "ingredient",
+}
+
+export const MANUAL_PRICE_HINTS: Record<string, { name: string; icon: Food; pricePerKg: number }> = {
+  tempe: { name: "Tempe", icon: Food.Tofu, pricePerKg: 20000 },
+  tahu: { name: "Tahu", icon: Food.Tofu, pricePerKg: 15000 },
+  kecap: { name: "Kecap manis", icon: Food.Sauce, pricePerKg: 25000 },
+  tepung: { name: "Tepung terigu", icon: Food.Flour, pricePerKg: 14000 },
+  timun: { name: "Timun", icon: Food.Cucumber, pricePerKg: 12000 },
+  garam: { name: "Garam", icon: Food.Salt, pricePerKg: 8000 },
+  teh: { name: "Teh", icon: Food.Tea, pricePerKg: 80000 },
+  santan: { name: "Santan", icon: Food.Coconut, pricePerKg: 30000 },
+  nasi: { name: "Nasi", icon: Food.Rice, pricePerKg: 5000 },
 };
 
 export enum Formula {
@@ -189,3 +220,5 @@ export const FORMULAS: Record<Formula, { title: string; text: string; formula: s
     formula: "kenaikan dalam rentang hari yang sama, 9 dari 10 kejadian di bawah angka ini",
   },
 };
+
+export const MENU_ICONS = [Food.Dish, Food.Chicken, Food.Rice, Food.Noodles, Food.Salad, Food.Soup, Food.Egg, Food.Fish, Food.Skewer, Food.Coffee];

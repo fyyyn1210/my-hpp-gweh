@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FoodIcon from "@/components/FoodIcon.vue";
 import Tip from "@/components/Tip.vue";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
@@ -144,7 +145,7 @@ const remove = () => {
 <template>
   <div v-if="menu" class="flex flex-col gap-5.5">
     <PageHead :title="menu.name" back="/menu">
-      <span class="avatar">{{ menu.emoji }}</span>
+      <span class="avatar"><FoodIcon :name="menu.icon" /></span>
     </PageHead>
 
     <section class="card-lime flex flex-col gap-3">
@@ -277,7 +278,7 @@ const remove = () => {
       <div v-if="topContributors.length" class="flex flex-col gap-1.5">
         <p class="label">Bahan penyebab modal naik sejak {{ dayLabel(since) }}</p>
         <div v-for="item in topContributors" :key="item.ingredient.id" class="flex items-center gap-3 py-1">
-          <span class="avatar avatar-sm">{{ item.ingredient.emoji }}</span>
+          <span class="avatar avatar-sm"><FoodIcon :name="item.ingredient.icon" :size="22" /></span>
           <div class="min-w-0 flex-1">
             <strong>{{ item.ingredient.name }}</strong>
             <p class="num text-tiny text-ink-2">{{ rupiah(item.before) }} → {{ rupiah(item.after) }} per porsi</p>
@@ -294,7 +295,7 @@ const remove = () => {
       </div>
       <div class="list">
         <div v-for="line in lines" :key="line.ingredient.id" class="list-row">
-          <span class="avatar avatar-sm">{{ line.ingredient.emoji }}</span>
+          <span class="avatar avatar-sm"><FoodIcon :name="line.ingredient.icon" :size="22" /></span>
           <div class="flex min-w-0 flex-1 flex-col gap-1.5">
             <div class="flex items-center justify-between gap-3">
               <strong>{{ line.ingredient.name }}</strong>

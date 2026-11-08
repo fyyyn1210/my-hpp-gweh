@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FoodIcon from "@/components/FoodIcon.vue";
 import Tip from "@/components/Tip.vue";
 import { AnimatePresence, motion } from "motion-v";
 import { computed, ref } from "vue";
@@ -9,7 +10,7 @@ import SourceTag from "@/components/SourceTag.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
 import { useStore } from "@/lib/store";
 import { hpp, ingredientPriceInfo, marginSteps, menuMargin, parseRecipeText, SAMPLE_RECIPE, statusOf, suggestPrice } from "@/lib/engine";
-import { Formula, MARGIN_CHOICES, PARSE_DELAY_MS, TODAY, UNIT_LABELS } from "@/lib/constants";
+import { Food, Formula, MARGIN_CHOICES, MENU_ICONS, PARSE_DELAY_MS, TODAY, UNIT_LABELS } from "@/lib/constants";
 import { percent, rupiah, thousands, uid } from "@/lib/format";
 import { Unit, type Ingredient, type Menu } from "@/lib/types";
 
@@ -18,7 +19,7 @@ const store = useStore();
 
 const step = ref<1 | 2 | 3>(1);
 const name = ref("");
-const emoji = ref("🍽️");
+const icon = ref(Food.Dish);
 const recipeText = ref("");
 const parsing = ref(false);
 const ingredients = ref<Ingredient[]>([]);
@@ -26,14 +27,13 @@ const sellPrice = ref(15000);
 const targetMargin = ref(0.3);
 const extraCost = ref(1000);
 
-const emojis = ["🍽️", "🍗", "🍚", "🍜", "🥗", "🍲", "🥚", "🐟", "🍢", "☕"];
 const unitOptions = Object.values(Unit);
 const titles = ["Nama dan resep", "Cek bahan", "Harga jual"];
 
 const draft = computed<Menu>(() => ({
   id: "draft",
   name: name.value || "Menu baru",
-  emoji: emoji.value,
+  icon: icon.value,
   sellPrice: sellPrice.value,
   priceSetDay: TODAY,
   targetMargin: targetMargin.value,
@@ -74,7 +74,7 @@ const addRow = () => {
   ingredients.value.push({
     id: uid("ing"),
     name: "",
-    emoji: "🥣",
+    icon: Food.Ingredient,
     qty: 1,
     unit: Unit.Gram,
     commodityId: null,
@@ -116,7 +116,7 @@ const save = () => {
           <div class="flex flex-col gap-2">
             <span class="label">Pilih gambar</span>
             <div class="chips">
-              <button v-for="item in emojis" :key="item" class="chip px-3.5 text-[22px]" :class="{ active: emoji === item }" @click="emoji = item">{{ item }}</button>
+              <button v-for="item in MENU_ICONS" :key="item" class="chip px-3.5" :class="{ active: icon === item }" :aria-label="item" @click="icon = item"><FoodIcon :name="item" :size="24" /></button>
             </div>
           </div>
           <div class="flex flex-col gap-2">
@@ -144,7 +144,7 @@ const save = () => {
 
         <section v-for="item in ingredients" :key="item.id" class="card flex flex-col gap-3.5" :class="item.needsCheck && 'ring-2 ring-warn-bar'">
           <div class="flex items-center gap-3">
-            <span class="avatar avatar-sm">{{ item.emoji }}</span>
+            <span class="avatar avatar-sm"><FoodIcon :name="item.icon" :size="22" /></span>
             <input v-model="item.name" class="input min-w-0 flex-1" placeholder="Nama bahan" aria-label="Nama bahan" />
             <button class="icon-btn-flat" aria-label="Hapus bahan" @click="removeRow(item.id)"><Icon name="trash" :size="19" /></button>
           </div>

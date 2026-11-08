@@ -3,13 +3,15 @@ import { COMMODITY_MAP, commoditySeries } from "@/data/commodities";
 import { SEED_MENUS } from "@/data/menus";
 import { SEED_NOTAS } from "@/data/notas";
 import { CITIES, ROUNDING_STEPS, STORAGE_KEY, TODAY } from "./constants";
-import type { Menu, Nota } from "./types";
+import type { Account, Menu, Nota } from "./types";
 
 export interface PersistedState {
   menus: Menu[];
   notas: Nota[];
   readAlarms: string[];
   onboardingDone: boolean;
+  accounts: Account[];
+  session: string | null;
   ownerName: string;
   city: string;
   shareCommunity: boolean;
@@ -38,6 +40,8 @@ export const defaults = (): PersistedState => ({
   notas: seedNotas(),
   readAlarms: [],
   onboardingDone: false,
+  accounts: [],
+  session: null,
   ownerName: "Bu Sari",
   city: CITIES[0],
   shareCommunity: true,
