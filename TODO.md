@@ -7,7 +7,9 @@
 - web: price series, recipe parser, explanation and substitutes are local fakes (src/lib/engine.ts, src/data): replace with API
 - web: community prices are generated from fake contributors (src/data/community.ts): replace with real opt-in nota data; no fake contributors in demo video
 - web: nota day stored as relative day index (state.notas[].day), not ISO date: switch to real dates with API
-- web: catering buffer uses 120-day dummy PIHPS history: needs real multi-year history
+- web: catering page removed, assistant (/tanya) answers catering quotes via engine `cateringQuote`; buffer uses 120-day dummy PIHPS history, needs real multi-year history
 - web: no PWA manifest/service worker, no auth or guest mode, no real Telegram link, no unit tests
 - web: units grams (butir 60g, siung 5g, etc.) are rough guesses: confirm with real conversion table
 - web: no history of alarms per day, no push (FCM)
+- web: assistant (src/lib/assistant.ts) understands text with keyword regex, not LLM: replace with server agent loop + tool calling (see "Rancangan Asisten AI.md"); chat history in memory only, lost on reload
+- web: assistant has no daily message limit, no number guard, no Telegram channel, no nota photo yet

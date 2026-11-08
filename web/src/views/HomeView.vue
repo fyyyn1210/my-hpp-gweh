@@ -45,8 +45,8 @@ const topAlarms = computed(() => alarms.value.slice(0, 3));
 const topRisk = computed(() => ranking.value.slice(0, 3));
 
 const actions = [
-  { to: "/nota", icon: "receipt", label: "Catat harga belanja" },
-  { to: "/katering", icon: "pot", label: "Hitung pesanan" },
+  { to: "/nota", icon: "receipt", label: "Catatan harga belanja" },
+  { to: "/harga", icon: "chart", label: "Harga bahan" },
   { to: "/menu/baru", icon: "plus", label: "Tambah menu" },
 ] as const;
 

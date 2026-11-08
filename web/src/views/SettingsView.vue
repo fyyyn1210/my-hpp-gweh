@@ -62,38 +62,6 @@ const tgName = "@HPPPintarBot";
         </span>
         <input v-model="state.notifyInApp" type="checkbox" class="toggle" />
       </label>
-      <hr class="border-line" />
-      <label class="flex min-h-14 cursor-pointer items-center gap-3">
-        <span class="min-w-0 flex-1">
-          <strong>Telegram</strong>
-          <span class="block text-tiny text-ink-2">Pesan langsung ke HP saat untung turun.</span>
-        </span>
-        <input v-model="state.notifyTelegram" type="checkbox" class="toggle" />
-      </label>
-    </section>
-
-    <section class="card flex flex-col gap-3.5">
-      <div class="flex items-center gap-3">
-        <span class="avatar avatar-sm bg-info-soft text-info"><Icon name="send" :size="20" /></span>
-        <h2 class="flex-1">Sambungkan Telegram</h2>
-      </div>
-      <template v-if="state.telegramLinked">
-        <div class="note bg-brand-soft text-brand-deep"><Icon name="check" :size="20" class="mt-px flex-none" /><p>Sudah tersambung ke {{ tgName }}.</p></div>
-        <button class="btn btn-danger w-full" @click="store.unlinkTelegram">Putuskan sambungan</button>
-      </template>
-      <template v-else-if="state.telegramCode">
-        <ol class="flex list-decimal flex-col gap-1.5 pl-[22px]">
-          <li>Buka Telegram, cari <b>{{ tgName }}</b>.</li>
-          <li>Tekan <b>Start</b>, lalu kirim pesan ini:</li>
-        </ol>
-        <div class="num rounded-field bg-ink p-[18px] text-center text-2xl font-semibold tracking-[0.04em] text-lime">/start {{ state.telegramCode }}</div>
-        <button class="btn w-full" @click="store.confirmTelegram">Sudah saya kirim</button>
-        <p class="text-tiny text-ink-2">Versi contoh: tombol ini hanya pura-pura menyambung.</p>
-      </template>
-      <template v-else>
-        <p class="text-small text-ink-2">Dapat kabar di Telegram tanpa harus membuka aplikasi.</p>
-        <button class="btn w-full" @click="store.linkTelegram">Buat kode sambungan</button>
-      </template>
     </section>
 
     <section class="card flex flex-col gap-3.5">

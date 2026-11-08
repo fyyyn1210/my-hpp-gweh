@@ -14,7 +14,7 @@ const bare = computed(() => Boolean(route.meta.bare));
 const tabs: Array<{ to: string; icon: IconName; label: string; main?: boolean }> = [
   { to: "/", icon: "home", label: "Beranda" },
   { to: "/menu", icon: "menu", label: "Menu" },
-  { to: "/nota", icon: "receipt", label: "Catat", main: true },
+  { to: "/tanya", icon: "chat", label: "Tanya", main: true },
   { to: "/harga", icon: "chart", label: "Harga" },
   { to: "/alarm", icon: "bell", label: "Peringatan" },
 ];
@@ -22,8 +22,8 @@ const tabs: Array<{ to: string; icon: IconName; label: string; main?: boolean }>
 const sideLinks: Array<{ to: string; icon: IconName; label: string }> = [
   { to: "/", icon: "home", label: "Beranda" },
   { to: "/menu", icon: "menu", label: "Menu saya" },
-  { to: "/nota", icon: "receipt", label: "Catat harga belanja" },
-  { to: "/katering", icon: "pot", label: "Hitung pesanan katering" },
+  { to: "/tanya", icon: "chat", label: "Tanya" },
+  { to: "/nota", icon: "receipt", label: "Catatan harga belanja" },
   { to: "/harga", icon: "chart", label: "Harga bahan" },
   { to: "/alarm", icon: "bell", label: "Peringatan" },
   { to: "/pengaturan", icon: "settings", label: "Pengaturan" },

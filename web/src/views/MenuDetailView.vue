@@ -259,6 +259,7 @@ const remove = () => {
       <button v-else class="btn btn-light w-full" :disabled="explaining" @click="explain">
         {{ explaining ? "Sedang menyusun..." : "Jelaskan untuk saya" }}
       </button>
+      <button class="btn btn-white w-full" @click="router.push(`/tanya?menu=${menu.id}`)"><Icon name="chat" :size="20" />Tanya soal menu ini</button>
     </section>
 
     <section class="card flex flex-col gap-3.5">

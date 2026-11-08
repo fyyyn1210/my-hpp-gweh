@@ -329,7 +329,7 @@ export interface ParsedIngredient extends Ingredient {
   needsCheck: boolean;
 }
 
-const findCommodity = (name: string): Commodity | null => {
+export const findCommodity = (name: string): Commodity | null => {
   const lowered = name.toLowerCase();
   let best: { commodity: Commodity; length: number } | null = null;
   for (const commodity of Object.values(COMMODITY_MAP)) {

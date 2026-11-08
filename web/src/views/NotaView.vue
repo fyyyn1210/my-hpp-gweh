@@ -56,7 +56,7 @@ const history = computed(() => [...state.notas].sort((a, b) => b.day - a.day));
 
 <template>
   <div class="flex flex-col gap-5.5">
-    <PageHead title="Catat harga belanja" subtitle="Salin dari nota. Cukup bahan yang harganya berubah." />
+    <PageHead title="Catatan harga belanja" subtitle="Salin dari nota. Cukup bahan yang harganya berubah." />
 
     <AnimatePresence mode="wait">
       <motion.section

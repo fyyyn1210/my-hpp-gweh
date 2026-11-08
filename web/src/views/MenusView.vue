@@ -94,14 +94,5 @@ const items = computed(() => {
         </RouterLink>
       </motion.div>
     </div>
-
-    <RouterLink to="/katering" class="card-dark flex min-h-20 items-center gap-3">
-      <span class="avatar avatar-sm bg-lime-2 text-ink"><Icon name="pot" /></span>
-      <span class="min-w-0 flex-1">
-        <strong>Ada pesanan katering?</strong>
-        <span class="block text-tiny opacity-75">Hitung harga untuk acara beberapa minggu lagi.</span>
-      </span>
-      <Icon name="next" />
-    </RouterLink>
   </div>
 </template>
