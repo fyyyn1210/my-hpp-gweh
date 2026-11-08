@@ -13,6 +13,7 @@ const call = async (method: string, path: string, body?: unknown, token?: string
 const email = `tes-${Date.now()}@warung.test`;
 let access = "";
 let refresh = "";
+let demo = "";
 
 describe("api", () => {
     test("register seeds sample data and rejects duplicates", async () => {
@@ -20,6 +21,8 @@ describe("api", () => {
         expect(res.status).toBe(201);
         expect(res.json.data.user.email).toBe(email);
         expect(res.json.data.user.passwordHash).toBeUndefined();
+        expect((await call("GET", "/menus", undefined, res.json.data.accessToken)).json.data.length).toBe(0);
+        expect((await call("GET", "/notas", undefined, res.json.data.accessToken)).json.data.length).toBe(0);
         access = res.json.data.accessToken;
         refresh = res.json.data.refreshToken;
         const again = await call("POST", "/auth/register", { name: "Tes", email, password: "rahasia1", city: "Bandung", shareCommunity: true });
@@ -44,14 +47,16 @@ describe("api", () => {
         const commodities = await call("GET", "/commodities", undefined, access);
         expect(commodities.json.data.length).toBe(10);
         expect(commodities.json.data[0].prices.length).toBe(120);
-        const alerts = await call("GET", "/alerts", undefined, access);
+        expect((await call("GET", "/alerts", undefined, access)).json.data.length).toBe(0);
+        demo = (await call("POST", "/auth/demo")).json.data.accessToken;
+        const alerts = await call("GET", "/alerts", undefined, demo);
         expect(alerts.json.data.length).toBeGreaterThan(0);
-        await call("POST", "/alerts/read", { ids: [alerts.json.data[0].id] }, access);
-        expect((await call("GET", "/alerts", undefined, access)).json.data[0].read).toBe(true);
+        await call("POST", "/alerts/read", { ids: [alerts.json.data[0].id] }, demo);
+        expect((await call("GET", "/alerts", undefined, demo)).json.data[0].read).toBe(true);
     });
 
     test("menu crud", async () => {
-        const list = await call("GET", "/menus", undefined, access);
+        const list = await call("GET", "/menus", undefined, demo);
         expect(list.json.data.length).toBe(6);
         expect(list.json.data[0].name).toBe("Ayam Geprek");
         const created = await call("POST", "/menus", {
@@ -71,19 +76,19 @@ describe("api", () => {
     test("notas, community and recipe parser", async () => {
         const nota = await call("POST", "/notas", { commodityId: "cabai-rawit", pricePerKg: 80000, shared: true }, access);
         expect(nota.status).toBe(201);
-        const demo = await call("POST", "/auth/demo");
-        const votes = await call("GET", "/commodities/community", undefined, demo.json.data.accessToken);
+        const votes = await call("GET", "/commodities/community", undefined, demo);
         expect(votes.json.data.some((vote: any) => vote.pricePerKg === 80000)).toBe(true);
-        expect((await call("DELETE", `/notas/${nota.json.data.id}`, undefined, demo.json.data.accessToken)).status).toBe(404);
+        expect((await call("DELETE", `/notas/${nota.json.data.id}`, undefined, demo)).status).toBe(404);
         expect((await call("DELETE", `/notas/${nota.json.data.id}`, undefined, access)).status).toBe(200);
         const parsed = await call("POST", "/recipes/parse", { text: "150 gram daging ayam\n2 sdm kecap" }, access);
         expect(parsed.json.data[0].commodityId).toBe("ayam");
         expect(parsed.json.data[1].manualPricePerKg).toBe(25000);
     });
 
-    test("reset restores sample data", async () => {
-        await call("DELETE", `/menus/${(await call("GET", "/menus", undefined, access)).json.data[0].id}`, undefined, access);
-        await call("POST", "/me/reset", undefined, access);
-        expect((await call("GET", "/menus", undefined, access)).json.data.length).toBe(6);
+    test("reset restores sample data on the demo account only", async () => {
+        expect((await call("POST", "/me/reset", undefined, access)).status).toBe(403);
+        await call("DELETE", `/menus/${(await call("GET", "/menus", undefined, demo)).json.data[0].id}`, undefined, demo);
+        await call("POST", "/me/reset", undefined, demo);
+        expect((await call("GET", "/menus", undefined, demo)).json.data.length).toBe(6);
     });
 });

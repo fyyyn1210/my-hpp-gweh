@@ -20,7 +20,7 @@ const createUser = async ({ password, ...input }: RegisterInput) => {
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     return db.transaction(async (tx) => {
         const [user] = await tx.insert(users).values({ ...input, passwordHash }).returning();
-        await seedSampleData(tx, user.id);
+        if (user.email === DEMO_EMAIL) await seedSampleData(tx, user.id);
         return user;
     });
 };

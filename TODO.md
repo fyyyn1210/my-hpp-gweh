@@ -1,5 +1,10 @@
-- llm-provider (AI engine) and notifier (Telegram bot, FCM push) not built; Telegram link in Settings is still a local dummy
-- price-ingest only has a dummy PIHPS generator (`bun run db:seed`, src/modules/commodities/pihps.dummy.ts): add real PIHPS fetch + daily job; prices are national, not per city/province
+- llm-provider (AI engine) and notifier (Telegram bot) not built; Telegram link in Settings is still a local dummy
+- Firebase FCM push not built: add firebase-admin on server (device token table, send on new alert), firebase web SDK + service worker on web, FCM env keys
+- SMTP mail not built: add mailer (nodemailer) + SMTP env, use for email verification, password reset and alert emails
+- Cloudflare Turnstile not built: add widget on login/register/demo (web) + server-side token verify (TURNSTILE_SECRET_KEY) before auth
+- price-ingest only has a dummy PIHPS generator (`bun run db:seed`, src/modules/commodities/pihps.dummy.ts) writing to `commodity_prices`; no sync with any external API: add real PIHPS fetch (via `ingestPrices`) + daily job; without re-seeding, prices stop at the seed day and are forward-filled; prices are national, not per city/province
+- price used for HPP: own nota (14 days) → community median (same city, 7 days, min 3) → PIHPS × nota calibration; non-catalog ingredients use manual price stored in `menu_ingredients`
+- accounts registered before the demo-only seed change still have sample menus + notas: clean up (custom=false menus and their seeded notas)
 - ClientTimezone enum guessed (Asia/Jakarta, UTC): confirm; server day boundaries are UTC, not WIB
 - web: Vue (not Next.js as in concept doc)
 - hpp engine duplicated in web (src/lib/engine.ts) and server (src/modules/hpp/hpp.engine.ts): keep formulas in sync or move to a shared package
@@ -8,10 +13,9 @@
 - catering buffer uses 120-day dummy PIHPS history, needs real multi-year history
 - web: no PWA manifest/service worker, no unit tests for views
 - web: units grams (butir 60g, siung 5g, etc.) are rough guesses: confirm with real conversion table
-- alerts computed live on each request, ids stable per menu/commodity (once read stays read), no history, no push
+- alerts computed live on each request, ids stable per menu/commodity (once read stays read), no history, no push (needs FCM)
 - web: assistant (src/lib/assistant.ts) understands text with keyword regex, not LLM: replace with server agent loop + tool calling (see "Rancangan Asisten AI.md"); chat history in memory only, lost on reload
 - web: assistant has no daily message limit, no number guard, no Telegram channel, no nota photo yet
-- auth: stateless refresh JWT (no server-side revoke/logout), no email verification or password reset, no rate limit; POST /auth/demo logs anyone into one shared demo account: disable for production
-- register copies sample menus + notas (data contoh) into every new account
+- auth: stateless refresh JWT (no server-side revoke/logout), no email verification or password reset (needs SMTP), no rate limit or bot check (needs Turnstile); POST /auth/demo logs anyone into one shared demo account: disable for production
 - server tests (`bun test`) need a local Postgres db with migrations + seed (DATABASE_SSL=false)
 - web: food icons onion, garlic, oil/kecap bottle, sugar jar, salt, cucumber are hand-drawn SVG (src/components/FoodIcon.vue); tofu/tempe uses cube icon

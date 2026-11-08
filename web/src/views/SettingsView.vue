@@ -75,8 +75,8 @@ const tgName = "@HPPPintarBot";
       <h2>Tentang data</h2>
       <p class="text-small">Harga diambil berurutan: <b>nota Anda</b> (14 hari terakhir), lalu <b>harga komunitas</b> kota Anda, lalu <b>PIHPS</b> Bank Indonesia yang disesuaikan dengan nota Anda.</p>
       <p class="text-small">AI hanya membantu membaca resep dan menjelaskan. Semua hitungan uang dilakukan sistem, bukan AI.</p>
-      <p class="text-small text-ink-2">Versi ini masih memakai data contoh dan menyimpan data di perangkat ini.</p>
-      <button class="btn btn-outline w-full" @click="store.resetDemo"><Icon name="refresh" :size="20" />Kembalikan data contoh</button>
+      <p class="text-small text-ink-2">Harga PIHPS di versi ini masih contoh, belum harga pasar asli. Menu dan nota Anda tersimpan di akun.</p>
+      <button v-if="store.isDemo.value" class="btn btn-outline w-full" @click="store.resetDemo"><Icon name="refresh" :size="20" />Kembalikan data contoh</button>
     </section>
 
     <section class="card flex flex-col gap-3.5">

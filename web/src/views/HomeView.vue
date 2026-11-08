@@ -72,6 +72,18 @@ const openAlarm = (menuIds: string[]) => router.push(menuIds.length === 1 ? `/me
 
     <section class="rounded-[36px] bg-white px-1.5 pt-1.5 pb-1 shadow-soft">
       <motion.div
+        v-if="!state.menus.length"
+        class="card-lime flex flex-col items-start gap-3 px-[22px] pt-[22px] pb-6"
+        :initial="{ scale: 0.97, opacity: 0 }"
+        :animate="{ scale: 1, opacity: 1 }"
+      >
+        <p class="font-medium">Belum ada menu</p>
+        <p class="text-2xl font-semibold leading-snug">Tambahkan menu pertama Anda untuk melihat untung per porsi.</p>
+        <p class="text-[15.5px]">Tulis resepnya, kami hitung modal dan saran harga jualnya.</p>
+        <RouterLink to="/menu/baru" class="btn mt-1"><Icon name="plus" :size="20" />Tambah menu</RouterLink>
+      </motion.div>
+      <motion.div
+        v-else
         class="card-lime flex flex-col gap-2.5 px-[22px] pt-[22px] pb-6"
         :initial="{ scale: 0.97, opacity: 0 }"
         :animate="{ scale: 1, opacity: 1 }"
@@ -154,7 +166,7 @@ const openAlarm = (menuIds: string[]) => router.push(menuIds.length === 1 ? `/me
       </div>
     </section>
 
-    <section class="flex flex-col gap-3.5">
+    <section v-if="topRisk.length" class="flex flex-col gap-3.5">
       <div class="section-head">
         <h2>Menu paling rawan</h2>
         <RouterLink to="/menu">Semua <Icon name="next" :size="18" /></RouterLink>
@@ -171,6 +183,6 @@ const openAlarm = (menuIds: string[]) => router.push(menuIds.length === 1 ? `/me
       </div>
     </section>
 
-    <p class="text-center text-tiny text-ink-2">Semua harga di versi ini adalah data contoh, bukan harga pasar asli.</p>
+    <p class="text-center text-tiny text-ink-2">Harga PIHPS di versi ini masih contoh, bukan harga pasar asli.</p>
   </div>
 </template>

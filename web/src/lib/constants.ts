@@ -18,6 +18,7 @@ export const API_URL: string = import.meta.env.VITE_API_URL ?? "http://localhost
 export const PROFILE_SAVE_DELAY_MS = 600;
 export const EXPLAIN_DELAY_MS = 900;
 export const PASSWORD_MIN = 6;
+export const DEMO_EMAIL = "demo@myhppgweh.id";
 export const SUGGEST_IDLE_MS = 3000;
 export const SUGGEST_MAX_WORDS = 3;
 export const NOTA_MAX_AGE = 14;

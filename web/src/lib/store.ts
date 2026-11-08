@@ -1,6 +1,6 @@
 import { computed, ref, watch } from "vue";
 import { COMMODITIES, COMMODITY_MAP, setCommodities } from "@/data/commodities";
-import { DEFAULT_EXTRA_COST, DEFAULT_TARGET_MARGIN, DEFAULT_THRESHOLD, Food, PROFILE_SAVE_DELAY_MS, TODAY } from "@/lib/constants";
+import { DEFAULT_EXTRA_COST, DEFAULT_TARGET_MARGIN, DEMO_EMAIL, DEFAULT_THRESHOLD, Food, PROFILE_SAVE_DELAY_MS, TODAY } from "@/lib/constants";
 import { commodityChange, erosion, menuMargin, vulnerability, type Vulnerability } from "@/lib/engine";
 import { api, dayOf, errorText } from "@/lib/api";
 import { defaults, state } from "@/lib/state";
@@ -110,6 +110,8 @@ const load = async () => {
   await refreshAlerts();
   loaded.value = true;
 };
+
+const isDemo = computed(() => state.session === DEMO_EMAIL);
 
 const unreadCount = computed(() => alarms.value.filter((alarm) => !alarm.read).length);
 
@@ -250,6 +252,7 @@ export const useStore = () => ({
   state,
   toast,
   loaded,
+  isDemo,
   alarms,
   unreadCount,
   ranking,

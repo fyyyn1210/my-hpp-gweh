@@ -7,7 +7,7 @@ import Logo from "@/components/Logo.vue";
 import { useStore } from "@/lib/store";
 
 const route = useRoute();
-const { unreadCount, toast, state } = useStore();
+const { unreadCount, toast, state, isDemo } = useStore();
 
 const bare = computed(() => Boolean(route.meta.bare));
 
@@ -52,7 +52,7 @@ const isActive = (to: string) => (to === "/" ? route.path === "/" : route.path.s
         </nav>
         <div class="mt-auto rounded-field bg-white/60 px-4 py-3.5">
           <p class="text-small font-semibold">{{ state.ownerName }}</p>
-          <p class="text-tiny text-ink-2">{{ state.city }} · data contoh</p>
+          <p class="text-tiny text-ink-2">{{ state.city }}<template v-if="isDemo"> · akun demo</template></p>
         </div>
       </aside>
 
