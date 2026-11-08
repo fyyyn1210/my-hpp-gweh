@@ -1,0 +1,6 @@
+- drizzle schemas empty: add HPP tables (commodities, prices, menus, recipes, alerts)
+- auth module not copied: no user model decided yet (sample auth is single-admin via settings table)
+- settings util/schema not copied: add if needed
+- web/ empty: Next.js PWA not started
+- price-ingest, recipe-parser, hpp-engine, llm-provider, notifier modules not built
+- ClientTimezone enum guessed (Asia/Jakarta, UTC): confirm
