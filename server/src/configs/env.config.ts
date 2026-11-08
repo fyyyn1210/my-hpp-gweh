@@ -85,6 +85,7 @@ const postgres = {
     DATABASE_PASSWORD: str(),
     DATABASE_HOST: str(),
     DATABASE_PORT: port({ default: 5432 }),
+    DATABASE_SSL: bool({ default: true }),
 };
 
 const jwt = {

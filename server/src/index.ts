@@ -5,10 +5,17 @@ import cors from "@elysiajs/cors";
 import response, { FaultError } from "#src/utils/response.util.js";
 import { logger } from "#src/configs/pino.config.js";
 import type { Context } from "elysia";
+import { alertController } from "#src/modules/alerts/alert.controller.js";
+import { authController } from "#src/modules/auth/auth.controller.js";
+import { commodityController } from "#src/modules/commodities/commodity.controller.js";
+import { menuController } from "#src/modules/menus/menu.controller.js";
+import { notaController } from "#src/modules/notas/nota.controller.js";
+import { profileController } from "#src/modules/profile/profile.controller.js";
+import { recipeController } from "#src/modules/recipes/recipe.controller.js";
 
 const siteAllowed = env.NODE_ENV !== "production" ? ["*"] : [];
 
-const app = new Elysia()
+export const app = new Elysia()
     .use(cors({ origin: siteAllowed }))
     .use(openapi({
         path: "/api/docs",
@@ -22,7 +29,15 @@ const app = new Elysia()
                 version: "1.0.0",
                 description: "API documentation for MyHPPGweh",
             },
-            tags: [{ name: "Auth", description: "Authentication endpoints" }],
+            tags: [
+                { name: "Auth", description: "Authentication endpoints" },
+                { name: "Profile", description: "Signed-in user profile and settings" },
+                { name: "Commodities", description: "Commodity catalog, PIHPS price series and community votes" },
+                { name: "Menus", description: "Menus and recipes" },
+                { name: "Notas", description: "Purchase receipts" },
+                { name: "Alerts", description: "Margin and price alerts" },
+                { name: "Recipes", description: "Recipe text parser" },
+            ],
             servers: [
                 { url: `http://localhost:${env.APP_PORT}`, description: "Local (localhost)" },
                 { url: `http://127.0.0.1:${env.APP_PORT}`, description: "Local (127.0.0.1)" },
@@ -86,10 +101,19 @@ const app = new Elysia()
             data: null,
         }));
     })
-    .group("/api/v1", (app) => app)
-    .onStart(({ server }) => {
+    .group("/api/v1", (app) => app
+        .use(authController)
+        .use(profileController)
+        .use(commodityController)
+        .use(menuController)
+        .use(notaController)
+        .use(alertController)
+        .use(recipeController));
+
+if (import.meta.main) {
+    app.onStart(({ server }) => {
         console.log(`Server run on port:${server?.port}`);
-    })
-    .listen(env.APP_PORT);
+    }).listen(env.APP_PORT);
+}
 
 export type App = typeof app;

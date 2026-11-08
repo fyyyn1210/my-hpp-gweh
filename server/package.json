@@ -8,10 +8,13 @@
     "hash": "bun .scripts/hash-password.ts",
     "dev": "bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
-    "db:generate": "drizzle-kit generate --config=src/configs/drizzle.config.ts",
+    "db:generate": "bun --bun drizzle-kit generate --config=src/configs/drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config=src/configs/drizzle.config.ts",
-    "db:push": "drizzle-kit push --config=src/configs/drizzle.config.ts",
-    "db:studio": "drizzle-kit studio --config=src/configs/drizzle.config.ts"
+    "db:push": "bun --bun drizzle-kit push --config=src/configs/drizzle.config.ts",
+    "db:studio": "bun --bun drizzle-kit studio --config=src/configs/drizzle.config.ts",
+    "db:seed": "bun .scripts/seed.ts",
+    "check": "bun src/modules/hpp/hpp.engine.check.ts && bun src/modules/recipes/recipe.parser.check.ts",
+    "test": "bun test"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.4.2",

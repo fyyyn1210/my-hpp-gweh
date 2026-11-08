@@ -9,7 +9,7 @@ const instance = new SQL({
   username: env.DATABASE_USER_NAME,
   password: env.DATABASE_PASSWORD,
   database: env.DATABASE_NAME,
-  ssl: "require"
+  ssl: env.DATABASE_SSL ? "require" : false
 });
 
 export const client = drizzle({ client: instance, schema });

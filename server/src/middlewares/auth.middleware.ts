@@ -10,16 +10,16 @@ export const authMiddleware = new Elysia({ name: "auth.middleware" })
             secret: env.JWT_ACCESS_TOKEN_KEY,
         })
     )
-    .derive(async ({ jwt, headers: { authorization } }) => {
+    .derive({ as: "scoped" }, async ({ jwt, headers: { authorization } }) => {
         if (!authorization) {
             throw fault({ code: 401, message: "UNAUTHORIZED", cause: "Missing Authorization header" });
         }
         const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : authorization;
         const profile = await jwt.verify(token);
 
-        if (!profile) {
+        if (!profile || typeof profile.sub !== "string") {
             throw fault({ code: 401, message: "UNAUTHORIZED", cause: "Invalid or expired token" });
         }
 
-        return { user: profile };
+        return { user: profile, userId: profile.sub };
     });
