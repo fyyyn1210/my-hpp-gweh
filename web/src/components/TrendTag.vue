@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Formula } from "@/lib/constants";
+import Tip from "./Tip.vue";
 import { computed } from "vue";
 import { signedPercent } from "@/lib/format";
 
@@ -14,5 +16,5 @@ const arrow = computed(() => (rising.value ? "↑" : falling.value ? "↓" : "�
 </script>
 
 <template>
-  <span class="num whitespace-nowrap" :class="cls">{{ arrow }} {{ signedPercent(value) }}<span v-if="label" class="font-normal text-ink-2"> {{ label }}</span></span>
+  <span class="num whitespace-nowrap" :class="cls"><Tip :kind="Formula.PriceChange">{{ arrow }} {{ signedPercent(value) }}</Tip><span v-if="label" class="font-normal text-ink-2"> {{ label }}</span></span>
 </template>

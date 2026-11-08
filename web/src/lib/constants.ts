@@ -111,3 +111,81 @@ export const MANUAL_PRICE_HINTS: Record<string, { name: string; emoji: string; p
   santan: { name: "Santan", emoji: "🥥", pricePerKg: 30000 },
   nasi: { name: "Nasi", emoji: "🍚", pricePerKg: 5000 },
 };
+
+export enum Formula {
+  Margin = "margin",
+  MarginThen = "margin_then",
+  MarginNew = "margin_new",
+  AverageMargin = "average_margin",
+  Erosion = "erosion",
+  Threshold = "threshold",
+  Target = "target",
+  PortionCut = "portion_cut",
+  PriceChange = "price_change",
+  NotaDiff = "nota_diff",
+  Calibration = "calibration",
+  Buffer = "buffer",
+}
+
+export const FORMULAS: Record<Formula, { title: string; text: string; formula: string }> = {
+  [Formula.Margin]: {
+    title: "Untung per porsi",
+    text: "Dari tiap Rp100 harga jual, sebanyak ini yang jadi untung Anda.",
+    formula: "(harga jual − modal) ÷ harga jual",
+  },
+  [Formula.MarginThen]: {
+    title: "Untung saat harga ditetapkan",
+    text: "Untung waktu harga jual ini Anda tetapkan, memakai harga bahan hari itu.",
+    formula: "(harga jual − modal hari itu) ÷ harga jual",
+  },
+  [Formula.MarginNew]: {
+    title: "Untung setelah diubah",
+    text: "Perkiraan untung kalau pilihan ini dipakai, dengan harga bahan hari ini.",
+    formula: "(harga jual baru − modal baru) ÷ harga jual baru",
+  },
+  [Formula.AverageMargin]: {
+    title: "Untung rata-rata",
+    text: "Rata-rata untung semua menu Anda hari ini.",
+    formula: "jumlah untung % semua menu ÷ jumlah menu",
+  },
+  [Formula.Erosion]: {
+    title: "Untung turun",
+    text: "Selisih untung sekarang dengan untung saat harga jual ditetapkan. 1 poin = 1%.",
+    formula: "untung % dulu − untung % sekarang",
+  },
+  [Formula.Threshold]: {
+    title: "Batas aman",
+    text: "Kalau untung di bawah angka ini, menu diberi tanda Waspada. Anda yang menentukan.",
+    formula: "untung % < batas aman → Waspada",
+  },
+  [Formula.Target]: {
+    title: "Target untung",
+    text: "Untung yang Anda inginkan. Dipakai untuk menghitung saran harga dan porsi.",
+    formula: "harga saran = modal ÷ (1 − target)",
+  },
+  [Formula.PortionCut]: {
+    title: "Kurangi porsi",
+    text: "Bahan per porsi yang perlu dikurangi supaya untung kembali ke target tanpa naik harga.",
+    formula: "1 − (harga jual × (1 − target) − biaya lain) ÷ biaya bahan",
+  },
+  [Formula.PriceChange]: {
+    title: "Perubahan harga",
+    text: "Naik atau turunnya harga bahan dibanding harga sebelumnya.",
+    formula: "(harga baru − harga lama) ÷ harga lama",
+  },
+  [Formula.NotaDiff]: {
+    title: "Selisih dengan pasar",
+    text: "Seberapa mahal atau murah harga nota Anda dibanding harga pasar.",
+    formula: "(harga nota − harga pasar) ÷ harga pasar",
+  },
+  [Formula.Calibration]: {
+    title: "Selisih nota Anda",
+    text: "Biasanya harga belanja Anda segini dari harga pasar. Dipakai menebak harga saat belum ada nota baru.",
+    formula: "nilai tengah (harga nota ÷ harga pasar) − 1",
+  },
+  [Formula.Buffer]: {
+    title: "Cadangan kenaikan",
+    text: "Kenaikan harga bahan yang mungkin terjadi sampai hari acara, dilihat dari riwayat harga.",
+    formula: "kenaikan dalam rentang hari yang sama, 9 dari 10 kejadian di bawah angka ini",
+  },
+};

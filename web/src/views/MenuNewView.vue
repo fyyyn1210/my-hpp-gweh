@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Tip from "@/components/Tip.vue";
 import { AnimatePresence, motion } from "motion-v";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
@@ -7,8 +8,8 @@ import PageHead from "@/components/PageHead.vue";
 import SourceTag from "@/components/SourceTag.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
 import { useStore } from "@/lib/store";
-import { hpp, ingredientPriceInfo, menuMargin, parseRecipeText, SAMPLE_RECIPE, statusOf, suggestPrice } from "@/lib/engine";
-import { MARGIN_CHOICES, PARSE_DELAY_MS, TODAY, UNIT_LABELS } from "@/lib/constants";
+import { hpp, ingredientPriceInfo, marginSteps, menuMargin, parseRecipeText, SAMPLE_RECIPE, statusOf, suggestPrice } from "@/lib/engine";
+import { Formula, MARGIN_CHOICES, PARSE_DELAY_MS, TODAY, UNIT_LABELS } from "@/lib/constants";
 import { percent, rupiah, thousands, uid } from "@/lib/format";
 import { Unit, type Ingredient, type Menu } from "@/lib/types";
 
@@ -202,7 +203,7 @@ const save = () => {
           <div class="note">
             <Icon name="tag" :size="20" class="mt-px flex-none" />
             <div class="flex min-w-0 flex-1 flex-col gap-1.5">
-              <p>Saran harga jual <b class="num">{{ rupiah(suggestion.rounded) }}</b> (untung {{ percent(suggestion.actualMargin, 0) }})</p>
+              <p>Saran harga jual <b class="num">{{ rupiah(suggestion.rounded) }}</b> (untung <Tip :kind="Formula.MarginNew" :calc="marginSteps(suggestion.rounded, cost)">{{ percent(suggestion.actualMargin, 0) }}</Tip>)</p>
               <button class="btn btn-sm btn-white self-start" @click="sellPrice = suggestion.rounded">Pakai saran ini</button>
             </div>
           </div>
@@ -214,7 +215,7 @@ const save = () => {
             </div>
           </div>
           <div class="flex flex-wrap items-center justify-between gap-3 rounded-field bg-mist px-4 py-3.5 text-[17px]">
-            <span>Untung per porsi <b class="num">{{ rupiah(sellPrice - cost) }} ({{ percent(margin, 0) }})</b></span>
+            <span>Untung per porsi <b class="num">{{ rupiah(sellPrice - cost) }} (<Tip :kind="Formula.Margin" :calc="marginSteps(sellPrice, cost)">{{ percent(margin, 0) }}</Tip>)</b></span>
             <StatusBadge :status="statusOf(draft)" />
           </div>
         </section>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Tip from "@/components/Tip.vue";
 import { AnimatePresence, motion } from "motion-v";
 import { computed, ref } from "vue";
 import Icon from "@/components/Icon.vue";
@@ -9,7 +10,7 @@ import TrendTag from "@/components/TrendTag.vue";
 import { useStore } from "@/lib/store";
 import { calibrationOf, commodityChange, communityStats, latestNota, pihpsPrice, priceInfo } from "@/lib/engine";
 import { commoditySeries } from "@/data/commodities";
-import { COMMUNITY_MIN, RANGE_CHOICES, TODAY, WEEK } from "@/lib/constants";
+import { COMMUNITY_MIN, Formula, RANGE_CHOICES, TODAY, WEEK } from "@/lib/constants";
 import { dayLabel, percent, rupiah, thousands } from "@/lib/format";
 import { PriceSource, type Commodity } from "@/lib/types";
 
@@ -136,7 +137,7 @@ const detail = computed(() => {
               <span class="min-w-0 flex-1">
                 <strong>PIHPS (data pemerintah)</strong>
                 <span class="block text-tiny text-ink-2">
-                  rata-rata pasar kota<template v-if="Math.abs(detail.calibration - 1) > 0.005">, nota Anda biasanya {{ percent(Math.abs(detail.calibration - 1), 0) }} {{ detail.calibration > 1 ? "lebih mahal" : "lebih murah" }}</template>
+                  rata-rata pasar kota<template v-if="Math.abs(detail.calibration - 1) > 0.005">, nota Anda biasanya <Tip :kind="Formula.Calibration">{{ percent(Math.abs(detail.calibration - 1), 0) }}</Tip> {{ detail.calibration > 1 ? "lebih mahal" : "lebih murah" }}</template>
                 </span>
               </span>
               <strong class="num">{{ rupiah(detail.pihps) }}</strong>

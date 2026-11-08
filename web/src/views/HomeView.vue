@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Tip from "@/components/Tip.vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { motion } from "motion-v";
@@ -8,8 +9,8 @@ import SourceTag from "@/components/SourceTag.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
 import TrendTag from "@/components/TrendTag.vue";
 import { useStore } from "@/lib/store";
-import { commodityChange, menuMargin, priceInfo, statusOf } from "@/lib/engine";
-import { TODAY, WEEK } from "@/lib/constants";
+import { commodityChange, hpp, marginSteps, menuMargin, priceInfo, statusOf } from "@/lib/engine";
+import { Formula, TODAY, WEEK } from "@/lib/constants";
 import { longDate, percent, points, thousands } from "@/lib/format";
 import { AlarmKind, Status } from "@/lib/types";
 
@@ -79,9 +80,9 @@ const openAlarm = (menuIds: string[]) => router.push(menuIds.length === 1 ? `/me
           <p class="font-medium">Untung rata-rata per porsi</p>
           <StatusBadge :status="heroStatus" />
         </div>
-        <div class="big-number mt-1.5 text-[72px]">{{ percent(averageMargin, 0) }}</div>
+        <div class="big-number mt-1.5 text-[72px]"><Tip :kind="Formula.AverageMargin">{{ percent(averageMargin, 0) }}</Tip></div>
         <p class="text-[15.5px]">
-          <span class="num font-semibold">{{ averageErosion > 0 ? "↓" : "↑" }} {{ points(Math.abs(averageErosion), 1) }}</span>
+          <span class="num font-semibold"><Tip :kind="Formula.Erosion">{{ averageErosion > 0 ? "↓" : "↑" }} {{ points(Math.abs(averageErosion), 1) }}</Tip></span>
           sejak harga jual terakhir ditetapkan
         </p>
         <p class="mt-1 text-lg font-semibold">{{ headline }}</p>
@@ -162,7 +163,7 @@ const openAlarm = (menuIds: string[]) => router.push(menuIds.length === 1 ? `/me
           <span class="avatar">{{ item.menu.emoji }}</span>
           <span class="min-w-0 flex-1">
             <strong class="block">{{ item.menu.name }}</strong>
-            <span class="text-small text-ink-2">Untung <b class="num text-ink">{{ percent(menuMargin(item.menu), 0) }}</b></span>
+            <span class="text-small text-ink-2">Untung <b class="num text-ink"><Tip :kind="Formula.Margin" :calc="marginSteps(item.menu.sellPrice, hpp(item.menu))">{{ percent(menuMargin(item.menu), 0) }}</Tip></b></span>
           </span>
           <StatusBadge :status="statusOf(item.menu)" />
         </RouterLink>

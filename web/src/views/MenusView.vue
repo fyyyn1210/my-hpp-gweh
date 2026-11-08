@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Tip from "@/components/Tip.vue";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { motion } from "motion-v";
@@ -6,7 +7,8 @@ import Icon from "@/components/Icon.vue";
 import PageHead from "@/components/PageHead.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
 import { useStore } from "@/lib/store";
-import { erosion, hpp, menuMargin, statusOf } from "@/lib/engine";
+import { erosion, hpp, marginSteps, menuMargin, statusOf } from "@/lib/engine";
+import { Formula } from "@/lib/constants";
 import { dayLabel, percent, points, rupiah } from "@/lib/format";
 import { Status } from "@/lib/types";
 
@@ -82,12 +84,12 @@ const items = computed(() => {
           <div class="flex items-center justify-between rounded-field bg-mist px-3.5 py-2.5">
             <div>
               <p class="text-tiny text-ink-2">Untung sekarang</p>
-              <p class="num text-[26px] leading-tight font-semibold">{{ percent(menuMargin(item.menu), 0) }}</p>
+              <p class="num text-[26px] leading-tight font-semibold"><Tip :kind="Formula.Margin" :calc="marginSteps(item.menu.sellPrice, hpp(item.menu))">{{ percent(menuMargin(item.menu), 0) }}</Tip></p>
             </div>
             <div class="text-right">
               <p class="text-tiny text-ink-2">Sejak {{ dayLabel(item.menu.priceSetDay) }}</p>
               <p class="num text-small" :class="erosion(item.menu) > 0.005 ? 'font-semibold text-danger' : 'text-ink-2'">
-                {{ erosion(item.menu) > 0.005 ? `turun ${points(erosion(item.menu))}` : "stabil" }}
+                <Tip v-if="erosion(item.menu) > 0.005" :kind="Formula.Erosion">turun {{ points(erosion(item.menu)) }}</Tip><template v-else>stabil</template>
               </p>
             </div>
           </div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Tip from "./Tip.vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 import Icon from "./Icon.vue";
@@ -12,6 +13,7 @@ import {
   communityStats,
   hpp,
   marginOf,
+  marginSteps,
   menuMargin,
   pihpsPrice,
   portionCut,
@@ -21,7 +23,7 @@ import {
   substituteTarget,
   suggestPrice,
 } from "@/lib/engine";
-import { BUY_UNITS, MS_PER_DAY, PORTION_CUT_LIMIT, TODAY, WEEK } from "@/lib/constants";
+import { BUY_UNITS, Formula, MS_PER_DAY, PORTION_CUT_LIMIT, TODAY, WEEK } from "@/lib/constants";
 import { dayLabel, longDate, percent, rupiah, thousands } from "@/lib/format";
 
 const props = defineProps<{ card: Card }>();
@@ -122,7 +124,7 @@ const copyOffer = async () => {
     </div>
     <div class="flex flex-col gap-2 px-3 pt-3 pb-2">
       <p v-for="line in quote.lines.filter((item) => item.risk >= 1).slice(0, 2)" :key="line.ingredient.id" class="text-tiny text-ink-2">
-        {{ line.ingredient.emoji }} {{ line.ingredient.name }} bisa naik sampai {{ percent(line.buffer, 0) }}
+        {{ line.ingredient.emoji }} {{ line.ingredient.name }} bisa naik sampai <Tip :kind="Formula.Buffer">{{ percent(line.buffer, 0) }}</Tip>
       </p>
       <button class="btn w-full" @click="copyOffer"><Icon name="copy" :size="20" />Salin teks penawaran</button>
     </div>
@@ -137,11 +139,11 @@ const copyOffer = async () => {
     <div class="grid grid-cols-3 gap-2 rounded-field bg-mist px-3.5 py-3">
       <div>
         <p class="text-tiny text-ink-2">Untung dulu</p>
-        <p class="num font-semibold">{{ percent(menuMargin(menu, menu.priceSetDay), 0) }}</p>
+        <p class="num font-semibold"><Tip :kind="Formula.MarginThen" :calc="marginSteps(menu.sellPrice, hpp(menu, menu.priceSetDay))">{{ percent(menuMargin(menu, menu.priceSetDay), 0) }}</Tip></p>
       </div>
       <div>
         <p class="text-tiny text-ink-2">Sekarang</p>
-        <p class="num font-semibold">{{ percent(menuMargin(menu), 0) }}</p>
+        <p class="num font-semibold"><Tip :kind="Formula.Margin" :calc="marginSteps(menu.sellPrice, hpp(menu))">{{ percent(menuMargin(menu), 0) }}</Tip></p>
       </div>
       <div>
         <p class="text-tiny text-ink-2">Modal</p>
@@ -159,14 +161,14 @@ const copyOffer = async () => {
       <span class="avatar avatar-sm bg-ink text-white"><Icon name="tag" :size="20" /></span>
       <div class="min-w-0 flex-1">
         <strong>Naikkan harga jadi {{ rupiah(actions.price.rounded) }}</strong>
-        <p class="text-tiny text-ink-2">Untung kembali {{ percent(actions.price.actualMargin, 0) }}</p>
+        <p class="text-tiny text-ink-2">Untung kembali <Tip :kind="Formula.MarginNew" :calc="marginSteps(actions.price.rounded, hpp(menu))">{{ percent(actions.price.actualMargin, 0) }}</Tip></p>
       </div>
       <button v-if="actions.price.rounded !== menu.sellPrice" class="btn btn-sm" @click="emit('send', `Harga ${menu.name} jadi ${actions.price.rounded}`)">Pakai</button>
     </div>
     <div class="list-row">
       <span class="avatar avatar-sm"><Icon name="minus" :size="20" /></span>
       <div class="min-w-0 flex-1">
-        <strong v-if="actions.cut > 0.005">Kurangi porsi sekitar {{ percent(actions.cut, 0) }}</strong>
+        <strong v-if="actions.cut > 0.005">Kurangi porsi sekitar <Tip :kind="Formula.PortionCut">{{ percent(actions.cut, 0) }}</Tip></strong>
         <strong v-else>Porsi tidak perlu dikurangi</strong>
         <p v-if="actions.cut > PORTION_CUT_LIMIT" class="text-tiny text-ink-2">Terlalu banyak, lebih baik naikkan harga.</p>
       </div>
@@ -175,7 +177,7 @@ const copyOffer = async () => {
       <span class="avatar avatar-sm"><Icon name="swap" :size="20" /></span>
       <div class="min-w-0 flex-1">
         <strong>Ganti {{ actions.target.name.toLowerCase() }} dengan {{ actions.swap.substitute.name.toLowerCase() }}</strong>
-        <p class="text-tiny text-ink-2">Hemat {{ rupiah(actions.swap.saving) }}, untung jadi {{ percent(actions.swap.newMargin, 0) }}</p>
+        <p class="text-tiny text-ink-2">Hemat {{ rupiah(actions.swap.saving) }}, untung jadi <Tip :kind="Formula.MarginNew" :calc="marginSteps(menu.sellPrice, actions.swap.newCost)">{{ percent(actions.swap.newMargin, 0) }}</Tip></p>
       </div>
       <Icon name="next" :size="20" />
     </button>
@@ -226,7 +228,7 @@ const copyOffer = async () => {
       </div>
       <div>
         <p class="text-tiny text-ink-2">Untung jadi</p>
-        <p class="num font-semibold">{{ percent(marginOf(card.price, hpp(menu)), 0) }}</p>
+        <p class="num font-semibold"><Tip :kind="Formula.MarginNew" :calc="marginSteps(card.price, hpp(menu))">{{ percent(marginOf(card.price, hpp(menu)), 0) }}</Tip></p>
       </div>
     </div>
     <p v-if="card.done" class="flex items-center gap-2 font-semibold text-brand-deep"><Icon name="check" :size="20" />Tersimpan</p>
@@ -238,7 +240,7 @@ const copyOffer = async () => {
       <span class="avatar avatar-sm">{{ item.menu.emoji }}</span>
       <div class="min-w-0 flex-1">
         <strong>{{ item.menu.name }}</strong>
-        <p class="text-tiny text-ink-2">Untung {{ percent(menuMargin(item.menu), 0) }} · {{ item.vuln.action }}</p>
+        <p class="text-tiny text-ink-2">Untung <Tip :kind="Formula.Margin" :calc="marginSteps(item.menu.sellPrice, hpp(item.menu))">{{ percent(menuMargin(item.menu), 0) }}</Tip> · {{ item.vuln.action }}</p>
       </div>
       <StatusBadge :status="statusOf(item.menu)" />
     </button>

@@ -412,3 +412,6 @@ export const SAMPLE_RECIPE = `150 gram daging ayam
 1/2 ons cabe kriting
 2 sdm kecap manis
 3 sdm minyak goreng`;
+
+export const marginSteps = (sellPrice: number, cost: number) =>
+  `(${rupiah(sellPrice)} − ${rupiah(cost)}) ÷ ${rupiah(sellPrice)} = ${percent(marginOf(sellPrice, cost), 0)}`;

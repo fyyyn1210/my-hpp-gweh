@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Tip from "@/components/Tip.vue";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { AnimatePresence, motion } from "motion-v";
@@ -15,6 +16,7 @@ import {
   explanation,
   gramsOf,
   hpp,
+  marginSteps,
   hppSeries,
   ingredientCost,
   ingredientPriceInfo,
@@ -28,6 +30,7 @@ import {
 } from "@/lib/engine";
 import {
   EXPLAIN_DELAY_MS,
+  Formula,
   MARGIN_CHOICES,
   PORTION_CUT_LIMIT,
   RANGE_CHOICES,
@@ -150,7 +153,7 @@ const remove = () => {
         <StatusBadge :status="status" />
       </div>
       <div class="flex items-end gap-4">
-        <motion.div :key="margin" class="big-number text-[68px]" :initial="{ opacity: 0, y: 8 }" :animate="{ opacity: 1, y: 0 }">{{ percent(margin, 0) }}</motion.div>
+        <motion.div :key="margin" class="big-number text-[68px]" :initial="{ opacity: 0, y: 8 }" :animate="{ opacity: 1, y: 0 }"><Tip :kind="Formula.Margin" :calc="marginSteps(menu.sellPrice, cost)">{{ percent(margin, 0) }}</Tip></motion.div>
         <div class="pb-1.5">
           <p class="num font-semibold">{{ rupiah(menu.sellPrice - cost) }}</p>
           <p class="text-tiny">per porsi</p>
@@ -159,14 +162,14 @@ const remove = () => {
       <div class="flex flex-col gap-1.5 rounded-field bg-white/70 px-4 py-3.5">
         <div class="flex justify-between gap-3 text-[14.5px]">
           <span>Saat harga {{ rupiah(menu.sellPrice) }} ditetapkan ({{ dayLabel(menu.priceSetDay) }})</span>
-          <b class="num">{{ percent(marginThen, 0) }}</b>
+          <b class="num"><Tip :kind="Formula.MarginThen" :calc="marginSteps(menu.sellPrice, hpp(menu, menu.priceSetDay))">{{ percent(marginThen, 0) }}</Tip></b>
         </div>
         <div class="bar bg-ink/8">
           <motion.span :initial="{ width: 0 }" :animate="{ width: `${Math.max(marginThen, 0) * 200}%` }" class="bg-[#7b8a80]!" />
         </div>
         <div class="flex justify-between gap-3 text-[14.5px]">
           <span>Sekarang</span>
-          <b class="num">{{ percent(margin, 0) }}</b>
+          <b class="num"><Tip :kind="Formula.Margin" :calc="marginSteps(menu.sellPrice, cost)">{{ percent(margin, 0) }}</Tip></b>
         </div>
         <div class="relative h-2.5 rounded-full bg-ink/8">
           <motion.span
@@ -178,9 +181,9 @@ const remove = () => {
           />
           <span class="absolute -top-1 -bottom-1 w-[3px] rounded-sm bg-ink" :style="{ left: `${menu.threshold * 200}%` }" />
         </div>
-        <p class="text-tiny">Garis tegak = batas aman Anda {{ percent(menu.threshold, 0) }}</p>
+        <p class="text-tiny">Garis tegak = batas aman Anda <Tip :kind="Formula.Threshold">{{ percent(menu.threshold, 0) }}</Tip></p>
       </div>
-      <p v-if="drop > 0.005">Untung turun <b>{{ points(drop) }}</b> karena harga bahan naik.</p>
+      <p v-if="drop > 0.005">Untung turun <b><Tip :kind="Formula.Erosion">{{ points(drop) }}</Tip></b> karena harga bahan naik.</p>
       <p v-else>Untung masih sama seperti saat harga ditetapkan.</p>
     </section>
 
@@ -193,7 +196,7 @@ const remove = () => {
             <strong>Naikkan harga jadi {{ rupiah(suggestion.rounded) }}</strong>
             <p class="text-tiny text-ink-2">
               <template v-if="priceGap > 0">Naik {{ rupiah(priceGap) }} sekaligus. </template>
-              Untung kembali {{ percent(suggestion.actualMargin, 0) }}.
+              Untung kembali <Tip :kind="Formula.MarginNew" :calc="marginSteps(suggestion.rounded, cost)">{{ percent(suggestion.actualMargin, 0) }}</Tip>.
             </p>
           </div>
           <button class="btn btn-sm" :disabled="priceGap === 0" @click="applyPrice">{{ priceGap === 0 ? "Sudah" : "Pakai" }}</button>
@@ -201,12 +204,12 @@ const remove = () => {
         <div class="list-row">
           <span class="avatar avatar-sm"><Icon name="minus" :size="20" /></span>
           <div class="min-w-0 flex-1">
-            <strong v-if="cut > 0.005">Kurangi porsi sekitar {{ percent(cut, 0) }}</strong>
+            <strong v-if="cut > 0.005">Kurangi porsi sekitar <Tip :kind="Formula.PortionCut">{{ percent(cut, 0) }}</Tip></strong>
             <strong v-else>Porsi tidak perlu dikurangi</strong>
             <p class="text-tiny text-ink-2">
               <template v-if="cut > PORTION_CUT_LIMIT">Terlalu banyak, pelanggan bisa kecewa. Lebih baik naikkan harga.</template>
-              <template v-else-if="cut > 0.005">Harga tetap {{ rupiah(menu.sellPrice) }}, untung kembali {{ percent(menu.targetMargin, 0) }}.</template>
-              <template v-else>Untung masih sesuai target {{ percent(menu.targetMargin, 0) }}.</template>
+              <template v-else-if="cut > 0.005">Harga tetap {{ rupiah(menu.sellPrice) }}, untung kembali <Tip :kind="Formula.Target">{{ percent(menu.targetMargin, 0) }}</Tip>.</template>
+              <template v-else>Untung masih sesuai target <Tip :kind="Formula.Target">{{ percent(menu.targetMargin, 0) }}</Tip>.</template>
             </p>
           </div>
         </div>
@@ -234,7 +237,7 @@ const remove = () => {
                     {{ option.saving > 0 ? "Hemat" : "Lebih mahal" }} {{ rupiah(Math.abs(option.saving)) }}
                   </span>
                 </div>
-                <p class="text-small">Untung jadi <b>{{ percent(option.newMargin, 0) }}</b></p>
+                <p class="text-small">Untung jadi <b><Tip :kind="Formula.MarginNew" :calc="marginSteps(menu.sellPrice, option.newCost)">{{ percent(option.newMargin, 0) }}</Tip></b></p>
                 <p class="text-tiny text-ink-2">Catatan rasa: {{ option.substitute.note }}</p>
                 <button class="btn btn-sm btn-white self-start" @click="applySubstitute(index)">Pakai pengganti ini</button>
               </div>
@@ -336,7 +339,7 @@ const remove = () => {
         <motion.p :key="suggestion.rounded" class="big-number" :initial="{ opacity: 0.3, y: 6 }" :animate="{ opacity: 1, y: 0 }">
           <span class="cur">Rp</span>{{ thousands(suggestion.rounded) }}
         </motion.p>
-        <p class="text-small">Untung sebenarnya {{ percent(suggestion.actualMargin, 1) }} · {{ rupiah(suggestion.rounded - cost) }} per porsi</p>
+        <p class="text-small">Untung sebenarnya <Tip :kind="Formula.MarginNew" :calc="marginSteps(suggestion.rounded, cost)">{{ percent(suggestion.actualMargin, 1) }}</Tip> · {{ rupiah(suggestion.rounded - cost) }} per porsi</p>
       </div>
       <button class="btn w-full" :disabled="priceGap === 0" @click="applyPrice">
         {{ priceGap === 0 ? "Harga jual sudah sesuai" : `Pakai ${rupiah(suggestion.rounded)}` }}

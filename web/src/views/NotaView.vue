@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Tip from "@/components/Tip.vue";
 import { AnimatePresence, motion } from "motion-v";
 import { computed, ref } from "vue";
 import { useRoute } from "vue-router";
@@ -6,7 +7,7 @@ import Icon from "@/components/Icon.vue";
 import PageHead from "@/components/PageHead.vue";
 import { useStore } from "@/lib/store";
 import { calibrationOf, communityStats, pihpsPrice } from "@/lib/engine";
-import { BUY_UNITS } from "@/lib/constants";
+import { BUY_UNITS, Formula } from "@/lib/constants";
 import { dayLabel, percent, rupiah, thousands } from "@/lib/format";
 import type { Commodity } from "@/lib/types";
 
@@ -129,8 +130,8 @@ const history = computed(() => [...state.notas].sort((a, b) => b.day - a.day));
             <p class="big-number"><span class="cur">Rp</span>{{ thousands(pricePerKg) }}</p>
             <p class="text-small">
               <template v-if="Math.abs(diff) < 0.02">Sama dengan</template>
-              <template v-else-if="diff > 0"><b class="text-danger">{{ percent(diff, 0) }} lebih mahal</b> dari</template>
-              <template v-else><b class="text-brand">{{ percent(-diff, 0) }} lebih murah</b> dari</template>
+              <template v-else-if="diff > 0"><b class="text-danger"><Tip :kind="Formula.NotaDiff">{{ percent(diff, 0) }}</Tip> lebih mahal</b> dari</template>
+              <template v-else><b class="text-brand"><Tip :kind="Formula.NotaDiff">{{ percent(-diff, 0) }}</Tip> lebih murah</b> dari</template>
               {{ community ? `harga komunitas ${state.city}` : "harga PIHPS" }} ({{ rupiah(reference) }})
             </p>
           </motion.div>
@@ -167,7 +168,7 @@ const history = computed(() => [...state.notas].sort((a, b) => b.day - a.day));
       </div>
       <div class="note">
         <Icon name="info" :size="20" class="mt-px flex-none" />
-        <p>Harga nota dipakai 14 hari. Setelah itu kami perkirakan dari tren PIHPS, disesuaikan dengan selisih harga nota Anda selama ini<template v-if="selected"> (untuk {{ selected.name.toLowerCase() }}: {{ percent(calibrationOf(selected) - 1, 0) }})</template>.</p>
+        <p>Harga nota dipakai 14 hari. Setelah itu kami perkirakan dari tren PIHPS, disesuaikan dengan selisih harga nota Anda selama ini<template v-if="selected"> (untuk {{ selected.name.toLowerCase() }}: <Tip :kind="Formula.Calibration">{{ percent(calibrationOf(selected) - 1, 0) }}</Tip>)</template>.</p>
       </div>
     </section>
   </div>
