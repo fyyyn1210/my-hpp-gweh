@@ -1,3 +1,4 @@
+import { TODAY } from "@/lib/constants";
 import { Unit, type Menu } from "@/lib/types";
 
 export const SEED_MENUS: Menu[] = [
@@ -5,8 +6,9 @@ export const SEED_MENUS: Menu[] = [
     id: "menu-ayam-geprek",
     name: "Ayam Geprek",
     emoji: "🍗",
-    sellPrice: 18000,
-    targetMargin: 0.25,
+    sellPrice: 19000,
+    priceSetDay: TODAY - 90,
+    targetMargin: 0.3,
     threshold: 0.2,
     extraCost: 1500,
     ingredients: [
@@ -22,8 +24,9 @@ export const SEED_MENUS: Menu[] = [
     id: "menu-nasi-pecel-lele",
     name: "Pecel Lele",
     emoji: "🐟",
-    sellPrice: 15000,
-    targetMargin: 0.25,
+    sellPrice: 18000,
+    priceSetDay: TODAY - 75,
+    targetMargin: 0.3,
     threshold: 0.2,
     extraCost: 1500,
     ingredients: [
@@ -40,6 +43,7 @@ export const SEED_MENUS: Menu[] = [
     name: "Nasi Telur Balado",
     emoji: "🥚",
     sellPrice: 15000,
+    priceSetDay: TODAY - 60,
     targetMargin: 0.3,
     threshold: 0.2,
     extraCost: 1000,
@@ -55,7 +59,8 @@ export const SEED_MENUS: Menu[] = [
     id: "menu-soto-ayam",
     name: "Soto Ayam",
     emoji: "🍲",
-    sellPrice: 16000,
+    sellPrice: 15000,
+    priceSetDay: TODAY - 45,
     targetMargin: 0.3,
     threshold: 0.2,
     extraCost: 1500,
@@ -71,7 +76,8 @@ export const SEED_MENUS: Menu[] = [
     id: "menu-rawon",
     name: "Rawon Daging",
     emoji: "🥩",
-    sellPrice: 28000,
+    sellPrice: 29500,
+    priceSetDay: TODAY - 30,
     targetMargin: 0.3,
     threshold: 0.2,
     extraCost: 2000,
@@ -87,7 +93,8 @@ export const SEED_MENUS: Menu[] = [
     id: "menu-mie-goreng",
     name: "Mie Goreng Telur",
     emoji: "🍜",
-    sellPrice: 15000,
+    sellPrice: 10000,
+    priceSetDay: TODAY - 60,
     targetMargin: 0.3,
     threshold: 0.2,
     extraCost: 1500,

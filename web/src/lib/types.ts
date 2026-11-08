@@ -29,6 +29,13 @@ export enum AlarmKind {
   PriceSurge = "price_surge",
 }
 
+export enum PriceSource {
+  Nota = "nota",
+  Community = "community",
+  Pihps = "pihps",
+  Manual = "manual",
+}
+
 export interface Commodity {
   id: string;
   name: string;
@@ -38,7 +45,6 @@ export interface Commodity {
   trend: number;
   volatility: number;
   seed: number;
-  calibration: number;
   aliases: string[];
   unitOverrides?: Partial<Record<Unit, number>>;
 }
@@ -59,6 +65,7 @@ export interface Menu {
   name: string;
   emoji: string;
   sellPrice: number;
+  priceSetDay: number;
   targetMargin: number;
   threshold: number;
   extraCost: number;
@@ -84,4 +91,24 @@ export interface AlarmItem {
   commodityId?: string;
   severity: Status;
   active: boolean;
+}
+
+export interface Nota {
+  id: string;
+  commodityId: string;
+  pricePerKg: number;
+  day: number;
+  shared: boolean;
+}
+
+export interface PriceInfo {
+  price: number;
+  source: PriceSource;
+  day: number;
+}
+
+export interface CommunityStats {
+  median: number;
+  count: number;
+  dropped: number;
 }

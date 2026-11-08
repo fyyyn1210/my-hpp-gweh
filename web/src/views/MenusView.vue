@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
+import { motion } from "motion-v";
+import Icon from "@/components/Icon.vue";
 import PageHead from "@/components/PageHead.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
-import TrendTag from "@/components/TrendTag.vue";
 import { useStore } from "@/lib/store";
-import { hpp, hppChange, menuMargin, statusOf } from "@/lib/engine";
-import { TODAY, WEEK } from "@/lib/constants";
-import { percent, rupiah } from "@/lib/format";
-import { RiskLevel, Status } from "@/lib/types";
+import { erosion, hpp, menuMargin, statusOf } from "@/lib/engine";
+import { dayLabel, percent, points, rupiah } from "@/lib/format";
+import { Status } from "@/lib/types";
 
 type Sort = "risk" | "margin" | "name";
 
@@ -21,14 +21,14 @@ const filter = ref<"all" | Status>("all");
 const sorts: Array<{ key: Sort; label: string }> = [
   { key: "risk", label: "Paling rawan" },
   { key: "margin", label: "Untung terkecil" },
-  { key: "name", label: "A-Z" },
+  { key: "name", label: "Nama A-Z" },
 ];
 
 const filters: Array<{ key: "all" | Status; label: string }> = [
   { key: "all", label: "Semua" },
-  { key: Status.Loss, label: "⛔ Rugi" },
-  { key: Status.Warning, label: "⚠️ Waspada" },
-  { key: Status.Safe, label: "✅ Aman" },
+  { key: Status.Loss, label: "Rugi" },
+  { key: Status.Warning, label: "Waspada" },
+  { key: Status.Safe, label: "Aman" },
 ];
 
 const items = computed(() => {
@@ -37,110 +37,71 @@ const items = computed(() => {
   if (sort.value === "name") return [...list].sort((a, b) => a.menu.name.localeCompare(b.menu.name));
   return list;
 });
-
-const riskText = (level: RiskLevel) =>
-  level === RiskLevel.High ? "Rawan" : level === RiskLevel.Medium ? "Pantau" : "Aman";
-const riskClass = (level: RiskLevel) =>
-  level === RiskLevel.High ? "badge-loss" : level === RiskLevel.Medium ? "badge-warning" : "badge-safe";
 </script>
 
 <template>
-  <div class="stack">
-    <PageHead title="Menu Saya" subtitle="Urut dari yang paling rawan rugi">
-      <button class="btn btn-green btn-sm" @click="router.push('/menu/baru')">+ Tambah</button>
+  <div class="flex flex-col gap-5.5">
+    <PageHead title="Menu saya" subtitle="Untung tiap menu, dihitung dari harga terbaru">
+      <button class="btn btn-sm" @click="router.push('/menu/baru')"><Icon name="plus" :size="20" />Tambah</button>
     </PageHead>
 
-    <div class="chips" role="tablist" aria-label="Filter status">
-      <button v-for="item in filters" :key="item.key" class="chip" :class="{ active: filter === item.key }" @click="filter = item.key">
-        {{ item.label }}
-      </button>
-    </div>
-    <div class="row small">
-      <span class="muted">Urutkan:</span>
-      <select v-model="sort" class="select sort" aria-label="Urutkan menu">
-        <option v-for="item in sorts" :key="item.key" :value="item.key">{{ item.label }}</option>
-      </select>
+    <div class="flex flex-col gap-1.5">
+      <div class="chips" aria-label="Saring status">
+        <button v-for="item in filters" :key="item.key" class="chip" :class="{ active: filter === item.key }" @click="filter = item.key">
+          {{ item.label }}
+        </button>
+      </div>
+      <label class="flex items-center gap-3 px-1 text-small">
+        <span class="text-ink-2">Urutkan</span>
+        <select v-model="sort" class="min-h-[46px] rounded-full border-[1.5px] border-line bg-white px-4 text-[15.5px] outline-none">
+          <option v-for="item in sorts" :key="item.key" :value="item.key">{{ item.label }}</option>
+        </select>
+      </label>
     </div>
 
-    <div v-if="!items.length" class="card center">
-      <p class="muted">Tidak ada menu di kelompok ini.</p>
+    <div v-if="!items.length" class="card text-center text-ink-2">Tidak ada menu di kelompok ini.</div>
+
+    <div class="flex flex-col gap-3.5">
+      <motion.div
+        v-for="(item, index) in items"
+        :key="item.menu.id"
+        layout
+        :initial="{ opacity: 0, y: 12 }"
+        :animate="{ opacity: 1, y: 0 }"
+        :transition="{ delay: index * 0.03 }"
+      >
+        <RouterLink :to="`/menu/${item.menu.id}`" class="flex flex-col gap-3 rounded-card bg-white p-4 shadow-soft transition-transform active:scale-[0.99]">
+          <div class="flex items-center gap-3">
+            <span class="avatar">{{ item.menu.emoji }}</span>
+            <div class="min-w-0 flex-1">
+              <h3>{{ item.menu.name }}</h3>
+              <p class="num text-tiny text-ink-2">Jual {{ rupiah(item.menu.sellPrice) }} · modal {{ rupiah(hpp(item.menu)) }}</p>
+            </div>
+            <StatusBadge :status="statusOf(item.menu)" />
+          </div>
+          <div class="flex items-center justify-between rounded-field bg-mist px-3.5 py-2.5">
+            <div>
+              <p class="text-tiny text-ink-2">Untung sekarang</p>
+              <p class="num text-[26px] leading-tight font-semibold">{{ percent(menuMargin(item.menu), 0) }}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-tiny text-ink-2">Sejak {{ dayLabel(item.menu.priceSetDay) }}</p>
+              <p class="num text-small" :class="erosion(item.menu) > 0.005 ? 'font-semibold text-danger' : 'text-ink-2'">
+                {{ erosion(item.menu) > 0.005 ? `turun ${points(erosion(item.menu))}` : "stabil" }}
+              </p>
+            </div>
+          </div>
+        </RouterLink>
+      </motion.div>
     </div>
 
-    <button v-for="(item, index) in items" :key="item.menu.id" class="menu-card" @click="router.push(`/menu/${item.menu.id}`)">
-      <div class="row">
-        <span class="rank" v-if="sort === 'risk'">{{ index + 1 }}</span>
-        <div class="avatar">{{ item.menu.emoji }}</div>
-        <div class="grow left">
-          <strong class="name">{{ item.menu.name }}</strong>
-          <p class="small muted">Jual {{ rupiah(item.menu.sellPrice) }} · modal {{ rupiah(hpp(item.menu)) }}</p>
-        </div>
-        <StatusBadge :status="statusOf(item.menu)" />
-      </div>
-      <div class="row between stats">
-        <div>
-          <p class="tiny muted">Untung</p>
-          <strong class="num">{{ percent(menuMargin(item.menu), 0) }}</strong>
-        </div>
-        <div>
-          <p class="tiny muted">Modal seminggu</p>
-          <TrendTag :value="hppChange(item.menu, TODAY - WEEK)" />
-        </div>
-        <div>
-          <p class="tiny muted">Kerawanan</p>
-          <span class="badge" :class="riskClass(item.vuln.level)">{{ riskText(item.vuln.level) }} {{ item.vuln.score }}</span>
-        </div>
-      </div>
-    </button>
+    <RouterLink to="/katering" class="card-dark flex min-h-20 items-center gap-3">
+      <span class="avatar avatar-sm bg-lime-2 text-ink"><Icon name="pot" /></span>
+      <span class="min-w-0 flex-1">
+        <strong>Ada pesanan katering?</strong>
+        <span class="block text-tiny opacity-75">Hitung harga untuk acara beberapa minggu lagi.</span>
+      </span>
+      <Icon name="next" />
+    </RouterLink>
   </div>
 </template>
-
-<style scoped>
-.menu-card {
-  border: 0;
-  background: #fff;
-  border-radius: 22px;
-  box-shadow: var(--shadow);
-  padding: 16px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  text-align: left;
-}
-.left {
-  text-align: left;
-}
-.name {
-  font-size: 18px;
-}
-.rank {
-  width: 28px;
-  height: 28px;
-  border-radius: 14px;
-  background: var(--ink);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  font-size: 14px;
-  flex: none;
-}
-.stats {
-  background: var(--green-50);
-  border-radius: 16px;
-  padding: 10px 14px;
-  align-items: flex-start;
-}
-.num {
-  font-size: 22px;
-}
-.sort {
-  width: auto;
-  min-height: 44px;
-  font-size: 15px;
-  font-weight: 700;
-}
-.center {
-  text-align: center;
-}
-</style>

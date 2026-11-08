@@ -1,35 +1,16 @@
 <script setup lang="ts">
+import Icon from "./Icon.vue";
+
 defineProps<{ title: string; back?: string; subtitle?: string }>();
 </script>
 
 <template>
-  <header class="page-head">
-    <RouterLink v-if="back" :to="back" class="back" aria-label="Kembali">←</RouterLink>
-    <div class="grow">
+  <header class="flex items-center gap-3.5 pt-1">
+    <RouterLink v-if="back" :to="back" class="icon-btn" aria-label="Kembali"><Icon name="back" /></RouterLink>
+    <div class="min-w-0 flex-1">
       <h1>{{ title }}</h1>
-      <p v-if="subtitle" class="muted small">{{ subtitle }}</p>
+      <p v-if="subtitle" class="text-small text-ink-2">{{ subtitle }}</p>
     </div>
     <slot />
   </header>
 </template>
-
-<style scoped>
-.page-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.back {
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
-  background: #fff;
-  display: grid;
-  place-items: center;
-  font-size: 22px;
-  font-weight: 800;
-  box-shadow: var(--shadow);
-  flex: none;
-}
-</style>

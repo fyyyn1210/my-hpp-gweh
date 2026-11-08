@@ -1,7 +1,14 @@
-import { COMMODITY_MAP } from "@/data/commodities";
+import { COMMODITY_MAP, commoditySeries } from "@/data/commodities";
+import { COMMUNITY } from "@/data/community";
 import { SUBSTITUTES } from "@/data/substitutes";
 import {
+  CATERING_PERCENTILE,
+  COMMUNITY_MIN,
+  COMMUNITY_WINDOW,
   MANUAL_PRICE_HINTS,
+  NOTA_MAX_AGE,
+  OUTLIER_HIGH,
+  OUTLIER_LOW,
   RISK_HIGH,
   RISK_MEDIUM,
   SUBSTITUTE_TRIGGER,
@@ -10,37 +17,76 @@ import {
   UNIT_GRAMS,
   WEEK,
 } from "./constants";
-import { clamp, percent, rupiah, uid } from "./format";
+import { clamp, dayLabel, percent, rupiah, uid } from "./format";
+import { state } from "./state";
 import {
+  PriceSource,
   RiskLevel,
   Status,
   Unit,
   type Commodity,
+  type CommunityStats,
+  type PriceInfo,
   type Ingredient,
   type Menu,
   type Substitute,
 } from "./types";
 
-const seriesCache = new Map<string, number[]>();
-
-export const commoditySeries = (commodity: Commodity): number[] => {
-  const cached = seriesCache.get(commodity.id);
-  if (cached) return cached;
-  const length = TODAY + 1;
-  const values = Array.from({ length }, (_, day) => {
-    const progress = Math.pow(day / TODAY, 2.2);
-    const wave =
-      Math.sin(day * 0.9 + commodity.seed) * commodity.volatility +
-      Math.sin(day * 0.37 + commodity.seed * 2) * commodity.volatility * 0.6;
-    const price = commodity.basePrice * (1 + commodity.trend * progress) * (1 + wave);
-    return Math.round(price / 50) * 50;
-  });
-  seriesCache.set(commodity.id, values);
-  return values;
+const median = (values: number[]) => {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 };
 
-export const commodityPrice = (commodity: Commodity, day = TODAY) =>
-  commoditySeries(commodity)[clamp(day, 0, TODAY)] * commodity.calibration;
+const percentile = (values: number[], fraction: number) => {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.min(sorted.length - 1, Math.floor(fraction * sorted.length))] ?? 0;
+};
+
+export const pihpsPrice = (commodity: Commodity, day = TODAY) => commoditySeries(commodity)[clamp(day, 0, TODAY)];
+
+export const calibrationOf = (commodity: Commodity) => {
+  const ratios = state.notas
+    .filter((nota) => nota.commodityId === commodity.id)
+    .map((nota) => nota.pricePerKg / pihpsPrice(commodity, nota.day));
+  return ratios.length ? median(ratios) : 1;
+};
+
+export const latestNota = (commodityId: string, day = TODAY) =>
+  state.notas
+    .filter((nota) => nota.commodityId === commodityId && nota.day <= day && day - nota.day <= NOTA_MAX_AGE)
+    .sort((a, b) => b.day - a.day)[0] ?? null;
+
+export const communityStats = (commodity: Commodity, day = TODAY): CommunityStats | null => {
+  const config = COMMUNITY[commodity.id];
+  const votes: number[] = [];
+  for (let index = 0; index < (config?.contributors ?? 0); index++) {
+    const voteDay = day - (index % COMMUNITY_WINDOW);
+    const spread = (((index * 37 + commodity.seed) % 9) - 4) / 100;
+    votes.push(Math.round((pihpsPrice(commodity, voteDay) * (config.factor + spread)) / 500) * 500);
+  }
+  if (config?.outlier) votes.push(pihpsPrice(commodity, day) * config.outlier);
+  if (state.shareCommunity) {
+    const own = state.notas
+      .filter((nota) => nota.shared && nota.commodityId === commodity.id && nota.day <= day && day - nota.day < COMMUNITY_WINDOW)
+      .sort((a, b) => b.day - a.day)[0];
+    if (own) votes.push(own.pricePerKg);
+  }
+  const reference = pihpsPrice(commodity, day);
+  const kept = votes.filter((price) => price >= reference * OUTLIER_LOW && price <= reference * OUTLIER_HIGH);
+  if (kept.length < COMMUNITY_MIN) return null;
+  return { median: median(kept), count: kept.length, dropped: votes.length - kept.length };
+};
+
+export const priceInfo = (commodity: Commodity, day = TODAY): PriceInfo => {
+  const nota = latestNota(commodity.id, day);
+  if (nota) return { price: nota.pricePerKg, source: PriceSource.Nota, day: nota.day };
+  const community = communityStats(commodity, day);
+  if (community) return { price: community.median, source: PriceSource.Community, day };
+  return { price: pihpsPrice(commodity, day) * calibrationOf(commodity), source: PriceSource.Pihps, day };
+};
+
+export const commodityPrice = (commodity: Commodity, day = TODAY) => priceInfo(commodity, day).price;
 
 export const commodityChange = (commodity: Commodity, fromDay: number, toDay = TODAY) => {
   const from = commodityPrice(commodity, fromDay);
@@ -55,13 +101,13 @@ export const gramsOf = (ingredient: Ingredient): number => {
   return ingredient.qty * gramsPerUnit;
 };
 
-export const ingredientPricePerKg = (ingredient: Ingredient, day = TODAY): number => {
-  if (ingredient.commodityId) {
-    const commodity = COMMODITY_MAP[ingredient.commodityId];
-    if (commodity) return commodityPrice(commodity, day);
-  }
-  return ingredient.manualPricePerKg ?? 0;
+export const ingredientPriceInfo = (ingredient: Ingredient, day = TODAY): PriceInfo => {
+  const commodity = ingredient.commodityId ? COMMODITY_MAP[ingredient.commodityId] : null;
+  if (commodity) return priceInfo(commodity, day);
+  return { price: ingredient.manualPricePerKg ?? 0, source: PriceSource.Manual, day };
 };
+
+export const ingredientPricePerKg = (ingredient: Ingredient, day = TODAY) => ingredientPriceInfo(ingredient, day).price;
 
 export const ingredientCost = (ingredient: Ingredient, day = TODAY) =>
   (gramsOf(ingredient) / 1000) * ingredientPricePerKg(ingredient, day);
@@ -81,7 +127,16 @@ export const statusOf = (menu: Menu, day = TODAY): Status => {
   return Status.Safe;
 };
 
-export const hppSeries = (menu: Menu) => Array.from({ length: TODAY + 1 }, (_, day) => hpp(menu, day));
+export const hppSeries = (menu: Menu, days: number) =>
+  Array.from({ length: days }, (_, index) => hpp(menu, TODAY + 1 - days + index));
+
+export const erosion = (menu: Menu) => menuMargin(menu, menu.priceSetDay) - menuMargin(menu);
+
+export const portionCut = (menu: Menu) => {
+  const ingredientsCost = hpp(menu) - menu.extraCost;
+  const allowed = menu.sellPrice * (1 - menu.targetMargin) - menu.extraCost;
+  return ingredientsCost <= 0 ? 0 : clamp(1 - allowed / ingredientsCost, 0, 1);
+};
 
 export const hppChange = (menu: Menu, fromDay: number) => {
   const from = hpp(menu, fromDay);
@@ -119,11 +174,11 @@ export const contributors = (menu: Menu, fromDay: number): Contributor[] =>
     .sort((a, b) => b.delta - a.delta);
 
 const monthlyVolatility = (commodity: Commodity) => {
-  const series = commoditySeries(commodity);
+  const series = commoditySeries(commodity).slice(-30);
   const returns = series.slice(1).map((price, index) => (price - series[index]) / series[index]);
   const mean = returns.reduce((sum, value) => sum + value, 0) / returns.length;
   const variance = returns.reduce((sum, value) => sum + (value - mean) ** 2, 0) / returns.length;
-  const rise = Math.max(0, commodityChange(commodity, 0));
+  const rise = Math.max(0, commodityChange(commodity, TODAY - 29));
   return Math.max(Math.sqrt(variance) * Math.sqrt(WEEK) * 2, rise * 0.5);
 };
 
@@ -172,24 +227,24 @@ export const vulnerability = (menu: Menu): Vulnerability => {
 };
 
 export const explanation = (menu: Menu): string => {
-  const list = contributors(menu, TODAY - WEEK).filter((item) => item.delta > 0);
-  const oldMargin = menuMargin(menu, TODAY - WEEK);
+  const since = menu.priceSetDay;
+  const list = contributors(menu, since).filter((item) => item.delta > 0);
+  const oldMargin = menuMargin(menu, since);
   const newMargin = menuMargin(menu);
-  const oldCost = hpp(menu, TODAY - WEEK);
+  const oldCost = hpp(menu, since);
   const newCost = hpp(menu);
+  const when = `sejak harga jual ${rupiah(menu.sellPrice)} ditetapkan ${dayLabel(since)}`;
   if (list.length === 0 || newCost <= oldCost) {
-    return `Dalam 7 hari terakhir modal ${menu.name} tidak naik (${rupiah(oldCost)} menjadi ${rupiah(newCost)} per porsi). Margin Anda stabil di ${percent(newMargin, 1)}.`;
+    return `Modal ${menu.name} tidak naik ${when} (${rupiah(oldCost)} menjadi ${rupiah(newCost)} per porsi). Untung Anda stabil di ${percent(newMargin, 0)}.`;
   }
   const first = list[0];
   const second = list[1];
   const parts = [
-    `Modal ${menu.name} naik dari ${rupiah(oldCost)} menjadi ${rupiah(newCost)} per porsi dalam 7 hari terakhir, sehingga margin turun dari ${percent(oldMargin, 1)} ke ${percent(newMargin, 1)}.`,
+    `Modal ${menu.name} naik dari ${rupiah(oldCost)} menjadi ${rupiah(newCost)} per porsi ${when}, sehingga untung turun dari ${percent(oldMargin, 0)} ke ${percent(newMargin, 0)}.`,
     `Penyebab terbesar: ${first.ingredient.name.toLowerCase()} naik ${percent(first.changePct, 0)} (tambahan ${rupiah(first.delta)} per porsi).`,
   ];
   if (second && second.delta > 0) {
-    parts.push(
-      `Disusul ${second.ingredient.name.toLowerCase()} yang naik ${percent(second.changePct, 0)} (tambahan ${rupiah(second.delta)}).`,
-    );
+    parts.push(`Disusul ${second.ingredient.name.toLowerCase()} yang naik ${percent(second.changePct, 0)} (tambahan ${rupiah(second.delta)}).`);
   }
   return parts.join(" ");
 };
@@ -236,6 +291,38 @@ export const substituteOptions = (menu: Menu, ingredient: Ingredient): Substitut
       computable: true,
     };
   });
+};
+
+export const riseBuffer = (commodity: Commodity, days: number) => {
+  const series = commoditySeries(commodity);
+  const span = clamp(days, 1, TODAY - 1);
+  const rises: number[] = [];
+  for (let day = 0; day + span <= TODAY; day++) rises.push(Math.max(0, (series[day + span] - series[day]) / series[day]));
+  return percentile(rises, CATERING_PERCENTILE);
+};
+
+export const cateringQuote = (menu: Menu, portions: number, daysAhead: number, targetMargin: number, step: number) => {
+  const lines = menu.ingredients
+    .map((ingredient) => {
+      const cost = ingredientCost(ingredient);
+      const buffer = ingredient.commodityId ? riseBuffer(COMMODITY_MAP[ingredient.commodityId], daysAhead) : 0;
+      return { ingredient, cost, buffer, risk: cost * buffer };
+    })
+    .sort((a, b) => b.risk - a.risk);
+  const base = hpp(menu);
+  const projected = base + lines.reduce((sum, line) => sum + line.risk, 0);
+  const plain = suggestPrice(base, targetMargin, step);
+  const buffered = suggestPrice(projected, targetMargin, step);
+  return {
+    lines,
+    base,
+    projected,
+    plain,
+    buffered,
+    totalPlain: plain.rounded * portions,
+    totalBuffered: buffered.rounded * portions,
+    profit: (buffered.rounded - projected) * portions,
+  };
 };
 
 export interface ParsedIngredient extends Ingredient {

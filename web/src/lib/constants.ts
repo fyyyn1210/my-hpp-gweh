@@ -1,6 +1,6 @@
 import { Unit } from "./types";
 
-export const DAYS = 30;
+export const DAYS = 120;
 export const TODAY = DAYS - 1;
 export const WEEK = 7;
 export const MS_PER_DAY = 86_400_000;
@@ -13,9 +13,26 @@ export const DEFAULT_TARGET_MARGIN = 0.25;
 export const DEFAULT_THRESHOLD = 0.2;
 export const DEFAULT_EXTRA_COST = 1000;
 export const ROUNDING_STEPS = [500, 1000];
-export const STORAGE_KEY = "hpp-pintar-state-v1";
+export const STORAGE_KEY = "hpp-pintar-state-v2";
 export const EXPLAIN_DELAY_MS = 900;
 export const PARSE_DELAY_MS = 700;
+export const NOTA_MAX_AGE = 14;
+export const COMMUNITY_WINDOW = 7;
+export const COMMUNITY_MIN = 3;
+export const OUTLIER_LOW = 0.5;
+export const OUTLIER_HIGH = 2;
+export const CATERING_PERCENTILE = 0.9;
+export const MARGIN_CHOICES = [0.15, 0.2, 0.25, 0.3, 0.35, 0.4];
+export const PORTION_CHOICES = [50, 100, 200, 500];
+export const RANGE_CHOICES = [7, 30, 90];
+export const PORTION_CUT_LIMIT = 0.25;
+export const CITIES = ["Surabaya", "Jakarta Pusat", "Bandung", "Semarang", "Yogyakarta", "Malang", "Medan", "Makassar", "Denpasar"];
+export const BUY_UNITS = [
+  { key: "kg", label: "kg", perKg: 1 },
+  { key: "ons", label: "ons", perKg: 0.1 },
+  { key: "gram", label: "gram", perKg: 0.001 },
+  { key: "liter", label: "liter", perKg: 1 },
+];
 
 export const UNIT_GRAMS: Record<Unit, number> = {
   [Unit.Gram]: 1,

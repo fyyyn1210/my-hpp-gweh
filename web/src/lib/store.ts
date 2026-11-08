@@ -1,63 +1,29 @@
-import { computed, reactive, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import { COMMODITIES, COMMODITY_MAP } from "@/data/commodities";
-import { SEED_MENUS } from "@/data/menus";
 import {
   DEFAULT_EXTRA_COST,
   DEFAULT_TARGET_MARGIN,
   DEFAULT_THRESHOLD,
   SURGE_THRESHOLD,
-  STORAGE_KEY,
   TODAY,
   WEEK,
 } from "@/lib/constants";
 import {
   commodityChange,
+  erosion,
   hpp,
   menuMargin,
   statusOf,
   vulnerability,
   type Vulnerability,
 } from "@/lib/engine";
-import { percent, rupiah } from "@/lib/format";
-import { AlarmKind, Status, type AlarmItem, type Menu } from "@/lib/types";
+import { dayLabel, percent, points, rupiah, uid } from "@/lib/format";
+import { defaults, state } from "@/lib/state";
+import { AlarmKind, Status, type AlarmItem, type Menu, type Nota } from "@/lib/types";
 
-interface PersistedState {
-  menus: Menu[];
-  readAlarms: string[];
-  onboardingDone: boolean;
-  telegramLinked: boolean;
-  telegramCode: string;
-  notifyInApp: boolean;
-  notifyTelegram: boolean;
-  demoMode: boolean;
-}
-
-const defaults = (): PersistedState => ({
-  menus: structuredClone(SEED_MENUS),
-  readAlarms: [],
-  onboardingDone: false,
-  telegramLinked: false,
-  telegramCode: "",
-  notifyInApp: true,
-  notifyTelegram: true,
-  demoMode: true,
-});
-
-const load = (): PersistedState => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaults();
-    return { ...defaults(), ...JSON.parse(raw) };
-  } catch {
-    return defaults();
-  }
-};
-
-const state = reactive<PersistedState>(load());
 const toast = ref<string | null>(null);
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
-watch(state, (value) => localStorage.setItem(STORAGE_KEY, JSON.stringify(value)), { deep: true });
 
 const alarms = computed<AlarmItem[]>(() => {
   const items: AlarmItem[] = [];
@@ -89,8 +55,8 @@ const alarms = computed<AlarmItem[]>(() => {
       title:
         status === Status.Loss
           ? `${menu.name} sekarang rugi`
-          : `Untung ${menu.name} menipis jadi ${percent(menuMargin(menu), 0)}`,
-      detail: `Modal ${rupiah(hpp(menu))} per porsi, harga jual ${rupiah(menu.sellPrice)}. Batas aman Anda ${percent(menu.threshold, 0)}.`,
+          : `Untung ${menu.name} tinggal ${percent(menuMargin(menu), 0)}`,
+      detail: `Turun ${points(erosion(menu))} sejak harga ${rupiah(menu.sellPrice)} ditetapkan ${dayLabel(menu.priceSetDay)}. Batas aman Anda ${percent(menu.threshold, 0)}.`,
       day: TODAY,
       menuIds: [menu.id],
       severity: status,
@@ -107,6 +73,10 @@ const ranking = computed<Array<{ menu: Menu; vuln: Vulnerability }>>(() =>
   state.menus
     .map((menu) => ({ menu, vuln: vulnerability(menu) }))
     .sort((a, b) => b.vuln.score - a.vuln.score),
+);
+
+const averageErosion = computed(() =>
+  state.menus.length === 0 ? 0 : state.menus.reduce((sum, menu) => sum + erosion(menu), 0) / state.menus.length,
 );
 
 const averageMargin = computed(() =>
@@ -130,7 +100,18 @@ const showToast = (message: string) => {
 const getMenu = (id: string) => state.menus.find((menu) => menu.id === id);
 
 const addMenu = (menu: Menu) => {
-  state.menus.unshift({ ...menu, custom: true });
+  state.menus.unshift({ ...menu, priceSetDay: TODAY, custom: true });
+};
+
+const setSellPrice = (id: string, sellPrice: number) => updateMenu(id, { sellPrice, priceSetDay: TODAY });
+
+const addNota = (nota: Omit<Nota, "id" | "day">) => {
+  state.notas.unshift({ ...nota, id: uid("nota"), day: TODAY });
+  showToast(`Harga ${COMMODITY_MAP[nota.commodityId].name.toLowerCase()} tersimpan`);
+};
+
+const removeNota = (id: string) => {
+  state.notas = state.notas.filter((nota) => nota.id !== id);
 };
 
 const updateMenu = (id: string, patch: Partial<Menu>) => {
@@ -173,6 +154,7 @@ const newMenuTemplate = (): Omit<Menu, "id"> => ({
   name: "",
   emoji: "🍽️",
   sellPrice: 15000,
+  priceSetDay: TODAY,
   targetMargin: DEFAULT_TARGET_MARGIN,
   threshold: DEFAULT_THRESHOLD,
   extraCost: DEFAULT_EXTRA_COST,
@@ -186,6 +168,7 @@ export const useStore = () => ({
   unreadCount,
   ranking,
   averageMargin,
+  averageErosion,
   risingCommodities,
   commodities: COMMODITIES,
   commodityMap: COMMODITY_MAP,
@@ -193,6 +176,9 @@ export const useStore = () => ({
   getMenu,
   addMenu,
   updateMenu,
+  setSellPrice,
+  addNota,
+  removeNota,
   removeMenu,
   markAlarmRead,
   markAllRead,

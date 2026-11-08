@@ -1,12 +1,15 @@
 <script setup lang="ts">
+import { AnimatePresence, motion } from "motion-v";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
+import Icon from "@/components/Icon.vue";
 import PageHead from "@/components/PageHead.vue";
+import SourceTag from "@/components/SourceTag.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
 import { useStore } from "@/lib/store";
-import { hpp, menuMargin, parseRecipeText, SAMPLE_RECIPE, statusOf, suggestPrice } from "@/lib/engine";
-import { PARSE_DELAY_MS, ROUNDING_STEPS, UNIT_LABELS } from "@/lib/constants";
-import { percent, rupiah, uid } from "@/lib/format";
+import { hpp, ingredientPriceInfo, menuMargin, parseRecipeText, SAMPLE_RECIPE, statusOf, suggestPrice } from "@/lib/engine";
+import { MARGIN_CHOICES, PARSE_DELAY_MS, TODAY, UNIT_LABELS } from "@/lib/constants";
+import { percent, rupiah, thousands, uid } from "@/lib/format";
 import { Unit, type Ingredient, type Menu } from "@/lib/types";
 
 const router = useRouter();
@@ -19,17 +22,19 @@ const recipeText = ref("");
 const parsing = ref(false);
 const ingredients = ref<Ingredient[]>([]);
 const sellPrice = ref(15000);
-const targetMargin = ref(0.25);
+const targetMargin = ref(0.3);
 const extraCost = ref(1000);
 
 const emojis = ["🍽️", "🍗", "🍚", "🍜", "🥗", "🍲", "🥚", "🐟", "🍢", "☕"];
 const unitOptions = Object.values(Unit);
+const titles = ["Nama dan resep", "Cek bahan", "Harga jual"];
 
 const draft = computed<Menu>(() => ({
   id: "draft",
   name: name.value || "Menu baru",
   emoji: emoji.value,
   sellPrice: sellPrice.value,
+  priceSetDay: TODAY,
   targetMargin: targetMargin.value,
   threshold: 0.2,
   extraCost: extraCost.value,
@@ -38,7 +43,7 @@ const draft = computed<Menu>(() => ({
 
 const cost = computed(() => hpp(draft.value));
 const margin = computed(() => menuMargin(draft.value));
-const suggestion = computed(() => suggestPrice(cost.value, targetMargin.value, ROUNDING_STEPS[0]));
+const suggestion = computed(() => suggestPrice(cost.value, targetMargin.value, store.state.roundingStep));
 const needCheck = computed(() => ingredients.value.filter((item) => item.needsCheck).length);
 const manualMissing = computed(() => ingredients.value.filter((item) => !item.commodityId && !item.manualPricePerKg).length);
 
@@ -54,11 +59,14 @@ const parse = () => {
   parsing.value = true;
   setTimeout(() => {
     ingredients.value = parseRecipeText(recipeText.value);
-    const base = hpp({ ...draft.value, ingredients: ingredients.value });
-    sellPrice.value = suggestPrice(base, targetMargin.value, ROUNDING_STEPS[0]).rounded;
     parsing.value = false;
     step.value = 2;
   }, PARSE_DELAY_MS);
+};
+
+const toPrice = () => {
+  sellPrice.value = suggestion.value.rounded;
+  step.value = 3;
 };
 
 const addRow = () => {
@@ -78,10 +86,6 @@ const removeRow = (id: string) => {
   ingredients.value = ingredients.value.filter((item) => item.id !== id);
 };
 
-const confirmRow = (item: Ingredient) => {
-  item.needsCheck = false;
-};
-
 const save = () => {
   const id = uid("menu");
   store.addMenu({
@@ -95,150 +99,130 @@ const save = () => {
 </script>
 
 <template>
-  <div class="stack">
-    <PageHead title="Tambah Menu" back="/menu" :subtitle="`Langkah ${step} dari 3`" />
-    <div class="progress"><span :style="{ width: `${(step / 3) * 100}%`, background: 'var(--green-700)' }" /></div>
+  <div class="flex flex-col gap-5.5">
+    <PageHead title="Tambah menu" back="/menu" :subtitle="`Langkah ${step} dari 3: ${titles[step - 1]}`" />
+    <div class="-mt-2 flex gap-1.5">
+      <span v-for="i in 3" :key="i" class="h-[5px] flex-1 rounded-full transition-colors" :class="i <= step ? 'bg-ink' : 'bg-ink/12'" />
+    </div>
 
-    <template v-if="step === 1">
-      <section class="card stack">
-        <h2>1. Tulis nama dan resepnya</h2>
-        <div class="field">
-          <label for="name">Nama menu</label>
-          <input id="name" v-model="name" class="input" placeholder="Contoh: Nasi Ayam Kecap" />
-        </div>
-        <div class="field">
-          <label>Pilih gambar</label>
-          <div class="chips">
-            <button v-for="item in emojis" :key="item" class="chip" :class="{ active: emoji === item }" @click="emoji = item">{{ item }}</button>
+    <AnimatePresence mode="wait">
+      <motion.div v-if="step === 1" key="s1" class="flex flex-col gap-5.5" :initial="{ opacity: 0, x: 24 }" :animate="{ opacity: 1, x: 0 }" :exit="{ opacity: 0, x: -24 }">
+        <section class="card flex flex-col gap-4">
+          <div class="flex flex-col gap-2">
+            <label for="name" class="label">Nama menu</label>
+            <input id="name" v-model="name" class="input" placeholder="Contoh: Nasi Ayam Kecap" />
           </div>
-        </div>
-        <div class="field">
-          <label for="recipe">Resep untuk 1 porsi</label>
-          <textarea id="recipe" v-model="recipeText" class="textarea" placeholder="150 gram daging ayam&#10;3 siung bawang putih&#10;2 butir telur" />
-          <p class="hint">Tulis satu bahan per baris: jumlah, satuan, nama bahan. Boleh pakai ons, siung, butir, sdm.</p>
-        </div>
-        <button class="btn btn-soft btn-block" @click="useSample">✨ Isi dengan contoh resep</button>
-        <button class="btn btn-green btn-block" :disabled="!canParse || parsing" @click="parse">
-          {{ parsing ? "Membaca resep..." : "Baca resep saya" }}
+          <div class="flex flex-col gap-2">
+            <span class="label">Pilih gambar</span>
+            <div class="chips">
+              <button v-for="item in emojis" :key="item" class="chip px-3.5 text-[22px]" :class="{ active: emoji === item }" @click="emoji = item">{{ item }}</button>
+            </div>
+          </div>
+          <div class="flex flex-col gap-2">
+            <label for="recipe" class="label">Resep untuk 1 porsi</label>
+            <textarea id="recipe" v-model="recipeText" class="textarea" placeholder="150 gram daging ayam&#10;3 siung bawang putih&#10;2 butir telur" />
+            <p class="text-sm text-ink-2">Satu bahan per baris: jumlah, satuan, nama. Boleh pakai ons, siung, butir, sdm.</p>
+          </div>
+          <button class="btn btn-light w-full" @click="useSample"><Icon name="sparkles" :size="20" />Isi dengan contoh resep</button>
+        </section>
+        <button class="btn w-full" :disabled="!canParse || parsing" @click="parse">
+          {{ parsing ? "Membaca resep..." : "Baca resep saya" }}<Icon v-if="!parsing" name="next" :size="20" />
         </button>
-        <p class="tiny muted">Pembacaan resep memakai contoh sederhana di versi ini. Nantinya dibantu AI, dan Anda tetap harus mengecek hasilnya.</p>
-      </section>
-    </template>
+        <p class="text-center text-tiny text-ink-2">Versi ini memakai pembaca resep sederhana. Nantinya dibantu AI, dan Anda tetap mengecek hasilnya.</p>
+      </motion.div>
 
-    <template v-else-if="step === 2">
-      <section class="card stack">
-        <h2>2. Cek bahan-bahannya</h2>
-        <div class="help-box">
-          Periksa tiap kartu. Ubah jumlah atau satuan kalau salah.
-          <b v-if="needCheck"> {{ needCheck }} bahan perlu dicek.</b>
-          Bahan tanpa label "harga pasar" harus Anda isi harganya sendiri.
+      <motion.div v-else-if="step === 2" key="s2" class="flex flex-col gap-5.5" :initial="{ opacity: 0, x: 24 }" :animate="{ opacity: 1, x: 0 }" :exit="{ opacity: 0, x: -24 }">
+        <div class="note">
+          <Icon name="info" :size="20" class="mt-px flex-none" />
+          <p>
+            Periksa tiap bahan. Ubah jumlah atau satuan kalau salah.
+            <b v-if="needCheck">{{ needCheck }} bahan perlu dicek.</b>
+            Bahan tanpa harga pasar perlu Anda isi harganya.
+          </p>
         </div>
-      </section>
 
-      <section v-for="item in ingredients" :key="item.id" class="card stack ing" :class="{ warn: item.needsCheck }">
-        <div class="row">
-          <div class="avatar">{{ item.emoji }}</div>
-          <input v-model="item.name" class="input grow" placeholder="Nama bahan" aria-label="Nama bahan" />
-        </div>
-        <div class="row">
-          <input v-model.number="item.qty" type="number" min="0" step="any" inputmode="decimal" class="input qty" aria-label="Jumlah" />
-          <select v-model="item.unit" class="select grow" aria-label="Satuan">
-            <option v-for="unit in unitOptions" :key="unit" :value="unit">{{ UNIT_LABELS[unit] }}</option>
-          </select>
-        </div>
-        <div v-if="item.commodityId" class="row">
-          <span class="badge badge-source">✔ Harga pasar otomatis</span>
-        </div>
-        <div v-else class="field">
-          <label>Harga Anda per kg (atau liter)</label>
-          <input v-model.number="item.manualPricePerKg" type="number" min="0" inputmode="numeric" class="input" placeholder="Contoh: 20000" />
-          <span v-if="!item.manualPricePerKg" class="badge badge-manual">Isi harga agar bisa dihitung</span>
-        </div>
-        <div class="row between">
-          <button v-if="item.needsCheck" class="btn btn-soft btn-sm" @click="confirmRow(item)">✔ Sudah benar</button>
-          <span v-else class="small muted">✔ Sudah dicek</span>
-          <button class="btn btn-danger btn-sm" @click="removeRow(item.id)">Hapus</button>
-        </div>
-      </section>
+        <section v-for="item in ingredients" :key="item.id" class="card flex flex-col gap-3.5" :class="item.needsCheck && 'ring-2 ring-warn-bar'">
+          <div class="flex items-center gap-3">
+            <span class="avatar avatar-sm">{{ item.emoji }}</span>
+            <input v-model="item.name" class="input min-w-0 flex-1" placeholder="Nama bahan" aria-label="Nama bahan" />
+            <button class="icon-btn-flat" aria-label="Hapus bahan" @click="removeRow(item.id)"><Icon name="trash" :size="19" /></button>
+          </div>
+          <div class="flex items-center gap-3">
+            <input v-model.number="item.qty" type="number" min="0" step="any" inputmode="decimal" class="input num w-24 flex-none px-2 text-center" aria-label="Jumlah" />
+            <select v-model="item.unit" class="input min-w-0 flex-1" aria-label="Satuan">
+              <option v-for="unit in unitOptions" :key="unit" :value="unit">{{ UNIT_LABELS[unit] }}</option>
+            </select>
+          </div>
+          <div v-if="item.commodityId" class="flex items-center justify-between gap-3">
+            <span class="num text-tiny text-ink-2">{{ rupiah(ingredientPriceInfo(item).price) }}/kg</span>
+            <SourceTag :source="ingredientPriceInfo(item).source" :day="ingredientPriceInfo(item).day" />
+          </div>
+          <div v-else class="flex flex-col gap-2">
+            <label class="label">Harga per kg (atau liter)</label>
+            <div class="input-money min-h-14 [&>input]:min-h-[52px] [&>input]:text-xl">
+              <span>Rp</span>
+              <input v-model.number="item.manualPricePerKg" type="number" min="0" inputmode="numeric" placeholder="0" />
+            </div>
+          </div>
+          <button v-if="item.needsCheck" class="btn btn-sm btn-light" @click="item.needsCheck = false"><Icon name="check" :size="18" />Sudah benar</button>
+        </section>
 
-      <button class="btn btn-ghost btn-block" @click="addRow">+ Tambah bahan</button>
+        <button class="btn btn-outline w-full" @click="addRow"><Icon name="plus" :size="20" />Tambah bahan</button>
 
-      <section class="card stack">
-        <div class="field">
-          <label for="extra">Biaya lain per porsi (gas, kemasan)</label>
-          <input id="extra" v-model.number="extraCost" type="number" min="0" inputmode="numeric" class="input" />
-        </div>
-        <div class="row between total">
-          <span>Modal per porsi</span>
-          <strong>{{ rupiah(cost) }}</strong>
-        </div>
-      </section>
+        <section class="card flex flex-col gap-3.5">
+          <div class="flex flex-col gap-2">
+            <label for="extra" class="label">Biaya lain per porsi (gas, kemasan)</label>
+            <div class="input-money min-h-14 [&>input]:min-h-[52px] [&>input]:text-xl">
+              <span>Rp</span>
+              <input id="extra" v-model.number="extraCost" type="number" min="0" inputmode="numeric" />
+            </div>
+          </div>
+          <div class="flex items-center justify-between rounded-field bg-mist px-4 py-3.5 text-[17px]">
+            <span>Modal per porsi</span>
+            <strong class="num">{{ rupiah(cost) }}</strong>
+          </div>
+        </section>
 
-      <div class="grid-2">
-        <button class="btn btn-ghost" @click="step = 1">Kembali</button>
-        <button class="btn btn-green" :disabled="!ingredients.length || manualMissing > 0" @click="step = 3">Lanjut</button>
-      </div>
-    </template>
+        <div class="grid grid-cols-2 gap-3">
+          <button class="btn btn-white" @click="step = 1">Kembali</button>
+          <button class="btn" :disabled="!ingredients.length || manualMissing > 0" @click="toPrice">Lanjut</button>
+        </div>
+      </motion.div>
 
-    <template v-else>
-      <section class="card stack">
-        <h2>3. Tentukan harga jual</h2>
-        <div class="suggest">
-          <p class="small muted">Modal per porsi</p>
-          <div class="big-number">{{ rupiah(cost) }}</div>
+      <motion.div v-else key="s3" class="flex flex-col gap-5.5" :initial="{ opacity: 0, x: 24 }" :animate="{ opacity: 1, x: 0 }" :exit="{ opacity: 0, x: -24 }">
+        <section class="card-lime flex flex-col gap-2">
+          <p class="text-small">Modal per porsi</p>
+          <p class="big-number"><span class="cur">Rp</span>{{ thousands(cost) }}</p>
+        </section>
+        <section class="card flex flex-col gap-3.5">
+          <span class="label">Mau untung berapa?</span>
+          <div class="chips">
+            <button v-for="value in MARGIN_CHOICES" :key="value" class="chip" :class="{ active: targetMargin === value }" @click="targetMargin = value">{{ percent(value, 0) }}</button>
+          </div>
+          <div class="note">
+            <Icon name="tag" :size="20" class="mt-px flex-none" />
+            <div class="flex min-w-0 flex-1 flex-col gap-1.5">
+              <p>Saran harga jual <b class="num">{{ rupiah(suggestion.rounded) }}</b> (untung {{ percent(suggestion.actualMargin, 0) }})</p>
+              <button class="btn btn-sm btn-white self-start" @click="sellPrice = suggestion.rounded">Pakai saran ini</button>
+            </div>
+          </div>
+          <div class="flex flex-col gap-2">
+            <label for="price" class="label">Harga jual Anda</label>
+            <div class="input-money">
+              <span>Rp</span>
+              <input id="price" v-model.number="sellPrice" type="number" min="0" inputmode="numeric" />
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-3 rounded-field bg-mist px-4 py-3.5 text-[17px]">
+            <span>Untung per porsi <b class="num">{{ rupiah(sellPrice - cost) }} ({{ percent(margin, 0) }})</b></span>
+            <StatusBadge :status="statusOf(draft)" />
+          </div>
+        </section>
+        <div class="grid grid-cols-2 gap-3">
+          <button class="btn btn-white" @click="step = 2">Kembali</button>
+          <button class="btn" :disabled="!canSave" @click="save">Simpan menu</button>
         </div>
-        <div class="field">
-          <label for="target">Untung yang diinginkan: <b>{{ percent(targetMargin, 0) }}</b></label>
-          <input id="target" v-model.number="targetMargin" type="range" min="0.05" max="0.6" step="0.01" class="range" />
-        </div>
-        <div class="help-box">
-          Saran harga jual: <b>{{ rupiah(suggestion.rounded) }}</b> (untung {{ percent(suggestion.actualMargin, 1) }})
-          <button class="btn btn-soft btn-sm btn-block use" @click="sellPrice = suggestion.rounded">Pakai saran ini</button>
-        </div>
-        <div class="field">
-          <label for="price">Harga jual Anda</label>
-          <input id="price" v-model.number="sellPrice" type="number" min="0" inputmode="numeric" class="input" />
-        </div>
-        <div class="row between total">
-          <span>Untung per porsi</span>
-          <span class="row"><strong>{{ rupiah(sellPrice - cost) }} ({{ percent(margin, 0) }})</strong><StatusBadge :status="statusOf(draft)" /></span>
-        </div>
-      </section>
-      <div class="grid-2">
-        <button class="btn btn-ghost" @click="step = 2">Kembali</button>
-        <button class="btn btn-green" :disabled="!canSave" @click="save">Simpan menu</button>
-      </div>
-    </template>
+      </motion.div>
+    </AnimatePresence>
   </div>
 </template>
-
-<style scoped>
-.ing.warn {
-  border: 3px solid var(--amber);
-}
-.qty {
-  width: 120px;
-  flex: none;
-}
-.total {
-  background: var(--green-50);
-  padding: 12px 14px;
-  border-radius: 14px;
-  font-size: 17px;
-  flex-wrap: wrap;
-}
-.suggest {
-  background: linear-gradient(140deg, #fff 0%, #fff9c9 100%);
-  border-radius: 18px;
-  padding: 16px;
-  border: 2px solid var(--yellow);
-}
-.range {
-  width: 100%;
-  height: 36px;
-  accent-color: var(--green-700);
-}
-.use {
-  margin-top: 10px;
-}
-</style>

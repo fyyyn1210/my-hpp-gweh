@@ -1,220 +1,174 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRouter } from "vue-router";
+import { motion } from "motion-v";
+import Icon from "@/components/Icon.vue";
+import Logo from "@/components/Logo.vue";
+import SourceTag from "@/components/SourceTag.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
 import TrendTag from "@/components/TrendTag.vue";
 import { useStore } from "@/lib/store";
-import { hpp, hppChange, menuMargin, statusOf, commodityPrice } from "@/lib/engine";
+import { commodityChange, menuMargin, priceInfo, statusOf } from "@/lib/engine";
 import { TODAY, WEEK } from "@/lib/constants";
-import { longDate, percent, rupiah } from "@/lib/format";
-import { Status } from "@/lib/types";
+import { longDate, percent, points, thousands } from "@/lib/format";
+import { AlarmKind, Status } from "@/lib/types";
 
 const router = useRouter();
-const { state, alarms, averageMargin, ranking, risingCommodities, unreadCount } = useStore();
+const { state, alarms, averageMargin, averageErosion, ranking, unreadCount, commodities } = useStore();
 
 const today = longDate(new Date());
 
 const counts = computed(() => ({
-  safe: state.menus.filter((menu) => statusOf(menu) === Status.Safe).length,
   warning: state.menus.filter((menu) => statusOf(menu) === Status.Warning).length,
   loss: state.menus.filter((menu) => statusOf(menu) === Status.Loss).length,
 }));
 
-const avgStatus = computed(() => {
-  if (averageMargin.value < 0) return Status.Loss;
-  if (counts.value.loss + counts.value.warning > 0) return Status.Warning;
-  return Status.Safe;
-});
+const heroStatus = computed(() =>
+  counts.value.loss ? Status.Loss : counts.value.warning ? Status.Warning : Status.Safe,
+);
 
 const headline = computed(() => {
-  if (counts.value.loss > 0) return `${counts.value.loss} menu sedang rugi. Segera cek.`;
-  if (counts.value.warning > 0) return `${counts.value.warning} menu untungnya menipis.`;
-  return "Semua menu Anda aman hari ini.";
+  if (counts.value.loss) return `${counts.value.loss} menu sedang rugi`;
+  if (counts.value.warning) return `${counts.value.warning} menu perlu naik harga`;
+  return "Semua menu aman";
 });
 
-const avgCost = computed(() =>
-  state.menus.length ? state.menus.reduce((sum, menu) => sum + hpp(menu), 0) / state.menus.length : 0,
+const usedIds = computed(() => new Set(state.menus.flatMap((menu) => menu.ingredients.map((item) => item.commodityId))));
+const usedCommodities = computed(() =>
+  commodities
+    .filter((commodity) => usedIds.value.has(commodity.id))
+    .map((commodity) => ({ commodity, info: priceInfo(commodity), change: commodityChange(commodity, TODAY - WEEK) }))
+    .sort((a, b) => b.change - a.change),
 );
-const avgCostChange = computed(() => {
-  if (!state.menus.length) return 0;
-  const before = state.menus.reduce((sum, menu) => sum + hpp(menu, TODAY - WEEK), 0) / state.menus.length;
-  return before === 0 ? 0 : (avgCost.value - before) / before;
-});
 
-const topAlarms = computed(() => alarms.value.slice(0, 2));
+const topAlarms = computed(() => alarms.value.slice(0, 3));
 const topRisk = computed(() => ranking.value.slice(0, 3));
-const topRising = computed(() => risingCommodities.value.slice(0, 4));
-const open = (id: string) => router.push(`/menu/${id}`);
+
+const actions = [
+  { to: "/nota", icon: "receipt", label: "Catat harga belanja" },
+  { to: "/katering", icon: "pot", label: "Hitung pesanan" },
+  { to: "/menu/baru", icon: "plus", label: "Tambah menu" },
+] as const;
+
+const openAlarm = (menuIds: string[]) => router.push(menuIds.length === 1 ? `/menu/${menuIds[0]}` : "/alarm");
 </script>
 
 <template>
-  <div class="stack">
-    <div>
-      <p class="muted small">{{ today }}</p>
-      <h1>Halo, Bu Sari 👋</h1>
-    </div>
-
-    <section class="hero card">
-      <div class="row between">
-        <p class="small hero-label">Rata-rata untung semua menu</p>
-        <StatusBadge :status="avgStatus" />
+  <div class="flex flex-col gap-5.5">
+    <header class="flex items-center gap-2.5">
+      <Logo :size="48" class="lg:hidden" />
+      <div class="min-w-0 flex-1">
+        <h1 class="text-2xl">Halo, {{ state.ownerName }}</h1>
+        <p class="text-tiny text-ink-2">{{ today }}</p>
       </div>
-      <div class="big-number">{{ percent(averageMargin, 0) }}</div>
-      <p class="hero-sub">{{ headline }}</p>
-      <div class="row hero-meta">
-        <span class="small">Modal rata-rata {{ rupiah(avgCost) }}</span>
-        <TrendTag :value="avgCostChange" label="seminggu" />
-      </div>
-    </section>
+      <RouterLink to="/alarm" class="icon-btn" aria-label="Peringatan">
+        <Icon name="bell" />
+        <b v-if="unreadCount" class="absolute -top-[3px] -right-[3px] grid h-5 min-w-5 place-items-center rounded-full bg-danger px-[5px] text-[11.5px] text-white ring-2 ring-white">{{ unreadCount }}</b>
+      </RouterLink>
+      <RouterLink to="/pengaturan" class="icon-btn" aria-label="Pengaturan"><Icon name="settings" /></RouterLink>
+    </header>
 
-    <section class="actions">
-      <button class="act" @click="router.push('/harga')">
-        <span class="act-icon">📈</span>
-        <span>Cek harga bahan</span>
-      </button>
-      <button class="act" @click="router.push('/menu/baru')">
-        <span class="act-icon">🧮</span>
-        <span>Hitung modal menu</span>
-      </button>
-      <button class="act" @click="router.push('/alarm')">
-        <span class="act-icon">🔔</span>
-        <span>Lihat peringatan</span>
-        <b v-if="unreadCount" class="act-dot">{{ unreadCount }}</b>
-      </button>
-    </section>
-
-    <section v-if="topAlarms.length" class="stack">
-      <div class="row between">
-        <h2>Perlu perhatian</h2>
-        <RouterLink to="/alarm" class="small link">Lihat semua</RouterLink>
-      </div>
-      <button
-        v-for="alarm in topAlarms"
-        :key="alarm.id"
-        class="list-item"
-        @click="alarm.menuIds.length === 1 ? open(alarm.menuIds[0]) : router.push('/alarm')"
+    <section class="rounded-[36px] bg-white px-1.5 pt-1.5 pb-1 shadow-soft">
+      <motion.div
+        class="card-lime flex flex-col gap-2.5 px-[22px] pt-[22px] pb-6"
+        :initial="{ scale: 0.97, opacity: 0 }"
+        :animate="{ scale: 1, opacity: 1 }"
+        :transition="{ type: 'spring', stiffness: 260, damping: 24 }"
       >
-        <div class="avatar">{{ alarm.severity === 'loss' ? '⛔' : '⚠️' }}</div>
-        <div class="grow">
-          <strong>{{ alarm.title }}</strong>
-          <p class="small muted">{{ alarm.detail }}</p>
+        <div class="flex items-center justify-between gap-3">
+          <p class="font-medium">Untung rata-rata per porsi</p>
+          <StatusBadge :status="heroStatus" />
         </div>
-      </button>
+        <div class="big-number mt-1.5 text-[72px]">{{ percent(averageMargin, 0) }}</div>
+        <p class="text-[15.5px]">
+          <span class="num font-semibold">{{ averageErosion > 0 ? "↓" : "↑" }} {{ points(Math.abs(averageErosion), 1) }}</span>
+          sejak harga jual terakhir ditetapkan
+        </p>
+        <p class="mt-1 text-lg font-semibold">{{ headline }}</p>
+      </motion.div>
+      <div class="grid grid-cols-3 divide-x divide-line">
+        <button
+          v-for="(action, index) in actions"
+          :key="action.to"
+          class="group flex min-h-24 flex-col items-center gap-2 px-1.5 pt-4 pb-3.5 text-center text-[14.5px] leading-tight font-medium"
+          @click="router.push(action.to)"
+        >
+          <span
+            class="grid size-[46px] place-items-center rounded-full transition-transform group-active:scale-90"
+            :class="index === 0 ? 'bg-ink text-lime' : 'bg-mist'"
+          >
+            <Icon :name="action.icon" />
+          </span>
+          {{ action.label }}
+        </button>
+      </div>
     </section>
 
-    <section class="stack">
-      <div class="row between">
+    <section v-if="topAlarms.length" class="flex flex-col gap-3.5">
+      <div class="section-head">
+        <h2>Perlu tindakan</h2>
+        <RouterLink to="/alarm">Semua <Icon name="next" :size="18" /></RouterLink>
+      </div>
+      <div class="list">
+        <button v-for="alarm in topAlarms" :key="alarm.id" class="list-row active:bg-mist" @click="openAlarm(alarm.menuIds)">
+          <span class="avatar avatar-sm" :class="alarm.severity === Status.Loss ? 'bg-danger-soft text-danger' : 'bg-warn-soft text-warn'">
+            <Icon :name="alarm.kind === AlarmKind.PriceSurge ? 'up' : 'alert'" :size="20" />
+          </span>
+          <span class="min-w-0 flex-1">
+            <strong class="block">{{ alarm.title }}</strong>
+            <span class="line-clamp-2 text-tiny text-ink-2">{{ alarm.detail }}</span>
+          </span>
+          <Icon name="next" class="text-ink-3" />
+        </button>
+      </div>
+    </section>
+
+    <section class="flex flex-col gap-3.5">
+      <div class="section-head">
+        <h2>Harga bahan Anda</h2>
+        <RouterLink to="/harga">Semua <Icon name="next" :size="18" /></RouterLink>
+      </div>
+      <div class="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pt-1 pb-4 [scrollbar-width:none] lg:mx-0 lg:px-0.5">
+        <motion.div
+          v-for="(item, index) in usedCommodities"
+          :key="item.commodity.id"
+          class="flex-none snap-start"
+          :initial="{ opacity: 0, x: 24 }"
+          :animate="{ opacity: 1, x: 0 }"
+          :transition="{ delay: index * 0.04 }"
+        >
+          <RouterLink to="/harga" class="flex h-full w-[156px] flex-col items-start gap-[5px] rounded-card bg-white p-4 shadow-soft">
+            <span class="avatar avatar-sm mb-1.5">{{ item.commodity.emoji }}</span>
+            <span class="min-h-[34px] text-tiny leading-tight text-ink-2">{{ item.commodity.name }}</span>
+            <strong class="num text-[22px]">{{ thousands(item.info.price) }}<span class="text-tiny font-normal text-ink-2">/{{ item.commodity.priceUnit }}</span></strong>
+            <TrendTag :value="item.change" class="text-tiny" />
+            <SourceTag :source="item.info.source" />
+          </RouterLink>
+        </motion.div>
+        <RouterLink to="/nota" class="flex w-[156px] flex-none snap-start flex-col items-center justify-center gap-2.5 rounded-card bg-ink p-4 text-center font-medium text-white">
+          <Icon name="plus" :size="28" />
+          Catat harga baru
+        </RouterLink>
+      </div>
+    </section>
+
+    <section class="flex flex-col gap-3.5">
+      <div class="section-head">
         <h2>Menu paling rawan</h2>
-        <RouterLink to="/menu" class="small link">Semua menu</RouterLink>
+        <RouterLink to="/menu">Semua <Icon name="next" :size="18" /></RouterLink>
       </div>
-      <p class="small muted">Menu yang untungnya paling mudah habis kalau harga bahan naik lagi.</p>
-      <button v-for="item in topRisk" :key="item.menu.id" class="list-item" @click="open(item.menu.id)">
-        <div class="avatar">{{ item.menu.emoji }}</div>
-        <div class="grow">
-          <strong>{{ item.menu.name }}</strong>
-          <p class="small muted">Untung {{ percent(menuMargin(item.menu), 0) }} · modal {{ rupiah(hpp(item.menu)) }}</p>
-          <TrendTag :value="hppChange(item.menu, TODAY - WEEK)" label="modal seminggu" />
-        </div>
-        <StatusBadge :status="statusOf(item.menu)" />
-      </button>
-    </section>
-
-    <section class="stack">
-      <div class="row between">
-        <h2>Bahan yang naik hari ini</h2>
-        <RouterLink to="/harga" class="small link">Semua harga</RouterLink>
-      </div>
-      <div class="grid-2">
-        <div v-for="item in topRising" :key="item.commodity.id" class="card mini">
-          <div class="mini-emoji">{{ item.commodity.emoji }}</div>
-          <p class="small muted">{{ item.commodity.name }}</p>
-          <strong>{{ rupiah(commodityPrice(item.commodity)) }}<span class="tiny muted">/{{ item.commodity.priceUnit }}</span></strong>
-          <div><TrendTag :value="item.change" /></div>
-        </div>
+      <div class="list">
+        <RouterLink v-for="item in topRisk" :key="item.menu.id" :to="`/menu/${item.menu.id}`" class="list-row active:bg-mist">
+          <span class="avatar">{{ item.menu.emoji }}</span>
+          <span class="min-w-0 flex-1">
+            <strong class="block">{{ item.menu.name }}</strong>
+            <span class="text-small text-ink-2">Untung <b class="num text-ink">{{ percent(menuMargin(item.menu), 0) }}</b></span>
+          </span>
+          <StatusBadge :status="statusOf(item.menu)" />
+        </RouterLink>
       </div>
     </section>
 
-    <p class="tiny muted">
-      Sumber harga: contoh data mirip PIHPS Bank Indonesia. Bukan harga asli, hanya untuk uji tampilan.
-    </p>
+    <p class="text-center text-tiny text-ink-2">Semua harga di versi ini adalah data contoh, bukan harga pasar asli.</p>
   </div>
 </template>
-
-<style scoped>
-.hero {
-  background: linear-gradient(140deg, #fff 0%, #fff9c9 100%);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 22px;
-}
-.hero-label {
-  font-weight: 700;
-  color: var(--muted);
-}
-.hero-sub {
-  font-size: 18px;
-  font-weight: 700;
-}
-.hero-meta {
-  justify-content: space-between;
-  flex-wrap: wrap;
-  border-top: 2px dashed var(--line);
-  padding-top: 10px;
-}
-.actions {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-.act {
-  position: relative;
-  border: 0;
-  background: #fff;
-  border-radius: 20px;
-  box-shadow: var(--shadow);
-  padding: 16px 6px;
-  min-height: 112px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-weight: 800;
-  font-size: 14.5px;
-  text-align: center;
-}
-.act:first-child {
-  background: var(--ink);
-  color: #fff;
-}
-.act-icon {
-  font-size: 30px;
-}
-.act-dot {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  background: var(--red);
-  color: #fff;
-  min-width: 22px;
-  height: 22px;
-  border-radius: 11px;
-  display: grid;
-  place-items: center;
-  font-size: 12px;
-}
-.link {
-  color: var(--green-700);
-  font-weight: 800;
-}
-.mini {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 14px;
-}
-.mini-emoji {
-  font-size: 30px;
-}
-</style>

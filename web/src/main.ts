@@ -1,4 +1,5 @@
 import { createApp } from "vue";
+import Lenis from "lenis";
 import { createRouter, createWebHashHistory } from "vue-router";
 import App from "./App.vue";
 import { useStore } from "./lib/store";
@@ -12,12 +13,13 @@ const router = createRouter({
     { path: "/menu", name: "menus", component: () => import("./views/MenusView.vue") },
     { path: "/menu/baru", name: "menu-new", component: () => import("./views/MenuNewView.vue") },
     { path: "/menu/:id", name: "menu-detail", component: () => import("./views/MenuDetailView.vue"), props: true },
+    { path: "/nota", name: "nota", component: () => import("./views/NotaView.vue") },
+    { path: "/katering", name: "catering", component: () => import("./views/CateringView.vue") },
     { path: "/harga", name: "prices", component: () => import("./views/PricesView.vue") },
     { path: "/alarm", name: "alarms", component: () => import("./views/AlarmsView.vue") },
     { path: "/pengaturan", name: "settings", component: () => import("./views/SettingsView.vue") },
     { path: "/:rest(.*)*", redirect: "/" },
   ],
-  scrollBehavior: () => ({ top: 0 }),
 });
 
 router.beforeEach((to) => {
@@ -25,5 +27,9 @@ router.beforeEach((to) => {
   if (!state.onboardingDone && to.name !== "onboarding") return { name: "onboarding" };
   return true;
 });
+
+const lenis = matchMedia("(prefers-reduced-motion: reduce)").matches ? null : new Lenis({ autoRaf: true });
+
+router.afterEach(() => (lenis ? lenis.scrollTo(0, { immediate: true }) : window.scrollTo(0, 0)));
 
 createApp(App).use(router).mount("#app");

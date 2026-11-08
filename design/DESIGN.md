@@ -1,4 +1,4 @@
-# HPP Pintar - Design Guide
+# MyHPPGweh - Design Guide
 
 Referensi visual: `01-fintech-wallet-kartu-angka-besar.webp`
 
@@ -48,7 +48,8 @@ Pedagang UMKM (warung, katering rumahan, kedai). Tidak terbiasa aplikasi rumit, 
 | Teks pendukung | `#5B6B5B` |
 
 ## Tipografi
-- Font sans-serif bersih (usulan: Plus Jakarta Sans atau Inter).
+- Font Poppins (Google Fonts). Token warna, radius, bayangan ada di `web/src/style.css` (`@theme`, Tailwind v4).
+- Logo: `design/Glossy Green H-Ribbon Logo.png`, versi web (crop persegi, kecil) di `web/public/logo.png` dan `favicon.png`.
 - Angka utama 40-48px bold, judul 24px, isi 16px.
 
 ## Layar MVP
