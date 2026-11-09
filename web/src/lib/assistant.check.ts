@@ -38,6 +38,7 @@ expect("fill all", respond("besok").card, { kind: CardKind.Quote, menuId: "menu-
 expect("portions bare", portionsOf("pesanan tanggal 20"), null);
 expect("nota", respond("Tadi beli cabai rawit 2 kilo 150 ribu").card, { kind: CardKind.NotaDraft, commodityId: "cabai-rawit", amount: 2, unitKey: "kg", total: 150000 });
 expect("price draft", respond("harga geprek jadi 21 ribu").card?.kind, CardKind.PriceDraft);
+expect("new menu", respond("buatkan menu ayam geprek+nasi").choices?.[0]?.to, "/menu/baru");
 expect("price draft bare", respond("harga geprek jadi 21000").card, { kind: CardKind.PriceDraft, menuId: "menu-ayam-geprek", price: 21000 });
 expect("why", respond("kenapa untung geprek turun?").card?.kind, CardKind.Status);
 expect("actions", respond("geprek harus naik berapa?").card?.kind, CardKind.Actions);

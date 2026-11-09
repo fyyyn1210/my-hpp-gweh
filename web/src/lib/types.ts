@@ -69,6 +69,7 @@ export interface Menu {
   extraCost: number;
   ingredients: Ingredient[];
   custom?: boolean;
+  createdDay?: number;
 }
 
 export interface Substitute {

@@ -6,8 +6,8 @@ import { api, dayOf, errorText } from "@/lib/api";
 import { defaults, state } from "@/lib/state";
 import type { AlarmItem, Commodity, Ingredient, Menu, Nota, Profile, Vote } from "@/lib/types";
 
-type Dated<T, K extends string> = Omit<T, "day" | "priceSetDay" | "read"> & Record<K, string>;
-type MenuDto = Omit<Dated<Menu, "priceSetAt">, "ingredients"> & { ingredients: Ingredient[] };
+type Dated<T, K extends string> = Omit<T, "day" | "priceSetDay" | "createdDay" | "read"> & Record<K, string>;
+type MenuDto = Omit<Dated<Menu, "priceSetAt" | "createdAt">, "ingredients"> & { ingredients: Ingredient[] };
 type Session = { user: Profile; accessToken: string; refreshToken: string };
 
 const toast = ref<string | null>(null);
@@ -23,7 +23,7 @@ const showToast = (message: string) => {
 
 const report = (error: unknown) => showToast(errorText(error));
 
-const fromMenu = ({ priceSetAt, ...menu }: MenuDto): Menu => ({ ...menu, priceSetDay: dayOf(priceSetAt) });
+const fromMenu = ({ priceSetAt, createdAt, ...menu }: MenuDto): Menu => ({ ...menu, priceSetDay: dayOf(priceSetAt), createdDay: dayOf(createdAt) });
 const fromNota = ({ recordedAt, ...nota }: Dated<Nota, "recordedAt">): Nota => ({ ...nota, day: dayOf(recordedAt) });
 const fromVote = ({ recordedAt, ...vote }: Dated<Vote, "recordedAt">): Vote => ({ ...vote, day: dayOf(recordedAt) });
 

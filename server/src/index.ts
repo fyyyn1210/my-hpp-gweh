@@ -6,6 +6,7 @@ import response, { FaultError } from "#src/utils/response.util.js";
 import { logger } from "#src/configs/pino.config.js";
 import type { Context } from "elysia";
 import { alertController } from "#src/modules/alerts/alert.controller.js";
+import { assistantController } from "#src/modules/assistant/assistant.controller.js";
 import { authController } from "#src/modules/auth/auth.controller.js";
 import { commodityController } from "#src/modules/commodities/commodity.controller.js";
 import { menuController } from "#src/modules/menus/menu.controller.js";
@@ -37,6 +38,7 @@ export const app = new Elysia()
                 { name: "Notas", description: "Purchase receipts" },
                 { name: "Alerts", description: "Margin and price alerts" },
                 { name: "Recipes", description: "Recipe text parser" },
+                { name: "Assistant", description: "AI assistant with tool calling" },
             ],
             servers: [
                 { url: `http://localhost:${env.APP_PORT}`, description: "Local (localhost)" },
@@ -108,7 +110,8 @@ export const app = new Elysia()
         .use(menuController)
         .use(notaController)
         .use(alertController)
-        .use(recipeController));
+        .use(recipeController)
+        .use(assistantController));
 
 if (import.meta.main) {
     app.onStart(({ server }) => {

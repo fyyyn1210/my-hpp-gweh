@@ -1,10 +1,11 @@
 import { reactive } from "vue";
+import { api, ApiError, stream } from "./api";
 import { COMMODITIES } from "@/data/commodities";
 import { explanation, findCommodity, menuMargin, statusOf } from "./engine";
 import { BUY_UNITS, MS_PER_DAY, PORTION_CHOICES } from "./constants";
 import { percent, rupiah, uid } from "./format";
 import { state } from "./state";
-import { Status, type Menu } from "./types";
+import { Status, type Ingredient, type Menu } from "./types";
 
 export enum CardKind {
   Quote = "quote",
@@ -13,16 +14,22 @@ export enum CardKind {
   Price = "price",
   NotaDraft = "nota_draft",
   PriceDraft = "price_draft",
+  MenuDraft = "menu_draft",
+  MenuDelete = "menu_delete",
   Ranking = "ranking",
 }
+
+export type MenuDraft = Omit<Menu, "id" | "priceSetDay" | "ingredients" | "custom"> & { ingredients: Array<Omit<Ingredient, "id">> };
 
 export type Card =
   | { kind: CardKind.Quote; menuId: string; portions: number; daysAhead: number; margin: number }
   | { kind: CardKind.Status; menuId: string }
   | { kind: CardKind.Actions; menuId: string }
   | { kind: CardKind.Price; commodityId: string }
-  | { kind: CardKind.NotaDraft; commodityId: string; amount: number; unitKey: string; total: number; done?: boolean }
-  | { kind: CardKind.PriceDraft; menuId: string; price: number; done?: boolean }
+  | { kind: CardKind.NotaDraft; commodityId: string; amount: number; unitKey: string; total: number; done?: boolean; stale?: boolean }
+  | { kind: CardKind.PriceDraft; menuId: string; price: number; done?: boolean; stale?: boolean }
+  | { kind: CardKind.MenuDraft; menuId: string | null; menu: MenuDraft; recipe?: string; suggested?: boolean; batch?: number; done?: boolean; stale?: boolean }
+  | { kind: CardKind.MenuDelete; menuId: string; name: string; done?: boolean; stale?: boolean }
   | { kind: CardKind.Ranking };
 
 export interface Choice {
@@ -31,9 +38,21 @@ export interface Choice {
   to?: string;
 }
 
+export enum StreamEvent {
+  Status = "status",
+  Reply = "reply",
+  Error = "error",
+}
+
+export interface Step {
+  text: string;
+  card?: CardKind;
+}
+
 export interface ChatMessage {
   id: string;
   mine: boolean;
+  animate?: boolean;
   text: string;
   card?: Card;
   choices?: Choice[];
@@ -186,7 +205,7 @@ const understand = (text: string): Answer | null => {
     return { text: `Ini harga ${commodity.name.toLowerCase()} yang saya pakai untuk menghitung modal Anda.`, card: { kind: CardKind.Price, commodityId: commodity.id } };
   }
 
-  if (/tambah menu|menu baru|bikin menu/.test(text)) {
+  if (/(tambah|tambahkan|bikin|bikinin|buat|buatkan|buatin) menu|menu baru/.test(text)) {
     return { text: "Tulis resepnya di halaman Tambah menu. Saya bantu baca bahannya.", choices: [{ label: "Buka Tambah menu", to: "/menu/baru" }] };
   }
 
@@ -241,4 +260,86 @@ export const respond = (input: string): ChatMessage => {
     text: "Maaf, saya belum paham. Saya bisa bantu soal untung menu, harga bahan, catat belanja, dan hitung pesanan. Coba saran di atas kolom ketik.",
   };
   return { id: uid("msg"), mine: false, text: final.text, card: final.card, choices: final.choices };
+};
+
+interface Reply {
+  text: string;
+  cards: Card[];
+  choices: Choice[];
+}
+
+interface StoredMessage extends Reply {
+  id: string;
+  role: string;
+}
+
+const LIMIT_NOTICE = "Jatah tanya AI hari ini sudah habis, jadi saya jawab dengan mode sederhana.";
+let limitNoticed = false;
+
+const botMessages = ({ text, cards, choices }: Reply): ChatMessage[] => {
+  const [card, ...rest] = cards;
+  return [
+    { id: uid("msg"), mine: false, text, card, choices },
+    ...rest.map((extra) => ({ id: uid("msg"), mine: false, text: "", card: extra })),
+  ];
+};
+
+const DRAFT_KINDS = new Set([CardKind.NotaDraft, CardKind.PriceDraft, CardKind.MenuDraft, CardKind.MenuDelete]);
+
+const staleDraft = (card: Card): Card => (DRAFT_KINDS.has(card.kind) ? ({ ...card, stale: true } as Card) : card);
+
+export interface ChatSession {
+  id: string;
+  title: string | null;
+  questions: number;
+  startedAt: string;
+  lastAt: string;
+}
+
+const toChat = (rows: StoredMessage[]): ChatMessage[] =>
+  rows.flatMap((row) =>
+    row.role === "user"
+      ? [{ id: row.id, mine: true, text: row.text }]
+      : botMessages({ text: row.text, cards: row.cards.map(staleDraft), choices: [] }),
+  );
+
+export const loadHistory = async () => toChat(await api<StoredMessage[]>("/assistant/messages").catch(() => []));
+
+export const loadSessions = () => api<ChatSession[]>("/assistant/sessions");
+
+export const loadSession = async (id: string) => toChat(await api<StoredMessage[]>(`/assistant/sessions/${id}`));
+
+export const resetChat = () => {
+  pending = "";
+  chat.splice(0, chat.length);
+  api("/assistant/reset", "POST").catch(() => undefined);
+};
+
+const ask = async (input: string, onStep: (step: Step) => void) => {
+  let answer: Reply | null = null;
+  await stream("/assistant/messages/stream", { text: input }, (event, data) => {
+    if (event === StreamEvent.Status) onStep(data);
+    if (event === StreamEvent.Reply) answer = data;
+    if (event === StreamEvent.Error) throw new ApiError(data.message, 0);
+  });
+  if (!answer) throw new ApiError("UNKNOWN_ERROR", 0);
+  return answer as Reply;
+};
+
+const fallback = (input: string, error: unknown): ChatMessage => {
+  const local = respond(input);
+  if (!(error instanceof ApiError && error.code === "AI_LIMIT_REACHED") || limitNoticed) return local;
+  limitNoticed = true;
+  return { ...local, text: `${LIMIT_NOTICE} ${local.text}` };
+};
+
+export const reply = async (input: string, onStep: (step: Step) => void): Promise<ChatMessage[]> => {
+  try {
+    const messages = botMessages(await ask(input, onStep));
+    pending = "";
+    messages[0].animate = true;
+    return messages;
+  } catch (error) {
+    return [{ ...fallback(input, error), animate: true }];
+  }
 };

@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import FoodIcon from "./FoodIcon.vue";
 import Tip from "./Tip.vue";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import Icon from "./Icon.vue";
 import SourceTag from "./SourceTag.vue";
 import StatusBadge from "./StatusBadge.vue";
 import TrendTag from "./TrendTag.vue";
 import { CardKind, type Card } from "@/lib/assistant";
+import type { Menu } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import {
   cateringQuote,
@@ -24,7 +25,7 @@ import {
   substituteTarget,
   suggestPrice,
 } from "@/lib/engine";
-import { BUY_UNITS, Formula, MS_PER_DAY, PORTION_CUT_LIMIT, TODAY, WEEK } from "@/lib/constants";
+import { BUY_UNITS, Formula, MS_PER_DAY, PORTION_CUT_LIMIT, TODAY, UNIT_LABELS, WEEK } from "@/lib/constants";
 import { dayLabel, longDate, percent, rupiah, thousands } from "@/lib/format";
 
 const props = defineProps<{ card: Card }>();
@@ -33,7 +34,7 @@ const router = useRouter();
 const store = useStore();
 const { state } = store;
 
-const menu = computed(() => ("menuId" in props.card ? store.getMenu(props.card.menuId) : undefined));
+const menu = computed(() => ("menuId" in props.card && props.card.menuId ? store.getMenu(props.card.menuId) : undefined));
 const commodity = computed(() => ("commodityId" in props.card ? store.commodityMap[props.card.commodityId] : undefined));
 
 const quote = computed(() =>
@@ -80,6 +81,62 @@ const savePrice = () => {
   if (props.card.kind !== CardKind.PriceDraft) return;
   store.setSellPrice(props.card.menuId, props.card.price);
   store.showToast(`Harga jual sekarang ${rupiah(props.card.price)}`);
+  props.card.done = true;
+};
+
+const draftMenu = computed<Menu | null>(() =>
+  props.card.kind === CardKind.MenuDraft
+    ? {
+        ...props.card.menu,
+        id: props.card.menuId ?? "draft",
+        priceSetDay: menu.value?.priceSetDay ?? TODAY,
+        ingredients: props.card.menu.ingredients.map((item, index) => ({ ...item, id: `draft-${index}` })),
+      }
+    : null,
+);
+const isNewMenu = computed(() => props.card.kind === CardKind.MenuDraft && props.card.recipe !== undefined);
+const savedTwin = computed(() =>
+  isNewMenu.value && props.card.kind === CardKind.MenuDraft && !props.card.done
+    ? store.state.menus.find((item) => item.name.trim().toLowerCase() === (props.card as { menu: { name: string } }).menu.name.trim().toLowerCase())
+    : undefined,
+);
+const unpriced = computed(() => draftMenu.value?.ingredients.filter((item) => !item.commodityId && !item.manualPricePerKg).length ?? 0);
+const unchecked = computed(() => draftMenu.value?.ingredients.filter((item) => item.needsCheck).length ?? 0);
+const savingMenu = ref(false);
+
+const editMenu = () => {
+  if (props.card.kind !== CardKind.MenuDraft) return;
+  const { name, sellPrice, ingredients } = props.card.menu;
+  const resep = ingredients.map((item) => `${item.qty} ${item.unit} ${item.name.toLowerCase()}`).join("\n");
+  if (isNewMenu.value) router.push({ path: "/menu/baru", query: { nama: name, resep, harga: String(sellPrice) } });
+  else router.push(`/menu/${props.card.menuId}`);
+};
+
+const saveMenu = async () => {
+  if (props.card.kind !== CardKind.MenuDraft || !draftMenu.value) return;
+  const card = props.card;
+  const { name, targetMargin, extraCost, ingredients } = draftMenu.value;
+  if (card.menuId) {
+    store.updateMenu(card.menuId, { name, targetMargin, extraCost, ingredients });
+  } else {
+    savingMenu.value = true;
+    try {
+      card.menuId = await store.addMenu(draftMenu.value);
+    } catch (error) {
+      store.report(error);
+      return;
+    } finally {
+      savingMenu.value = false;
+    }
+  }
+  store.showToast("Menu tersimpan");
+  card.done = true;
+};
+
+const deleteMenu = () => {
+  if (props.card.kind !== CardKind.MenuDelete) return;
+  store.removeMenu(props.card.menuId);
+  store.showToast(`${props.card.name} dihapus`);
   props.card.done = true;
 };
 
@@ -198,7 +255,7 @@ const copyOffer = async () => {
     <button class="btn btn-sm btn-light" @click="router.push(`/nota?bahan=${commodity.id}`)"><Icon name="receipt" :size="18" />Catat harga belanja saya</button>
   </div>
 
-  <div v-else-if="card.kind === CardKind.NotaDraft && nota && commodity" class="card flex flex-col gap-3" :class="!card.done && 'ring-2 ring-ink'">
+  <div v-else-if="card.kind === CardKind.NotaDraft && nota && commodity" class="card flex flex-col gap-3" :class="!card.done && !card.stale && 'ring-2 ring-ink'">
     <div class="flex items-center gap-3">
       <span class="avatar avatar-sm"><FoodIcon :name="commodity.icon" :size="22" /></span>
       <div class="min-w-0 flex-1">
@@ -211,13 +268,14 @@ const copyOffer = async () => {
       <b class="num">{{ rupiah(nota.perKg) }}</b>
     </div>
     <p v-if="card.done" class="flex items-center gap-2 font-semibold text-brand-deep"><Icon name="check" :size="20" />Tersimpan</p>
+    <p v-else-if="card.stale" class="text-small text-ink-2">Draf dari percakapan sebelumnya, belum tentu disimpan. Kirim ulang bila masih perlu.</p>
     <div v-else class="grid grid-cols-2 gap-2">
       <button class="btn btn-sm btn-white" @click="router.push(`/nota?bahan=${commodity.id}`)">Ubah</button>
       <button class="btn btn-sm" @click="saveNota">Simpan</button>
     </div>
   </div>
 
-  <div v-else-if="card.kind === CardKind.PriceDraft && menu" class="card flex flex-col gap-3" :class="!card.done && 'ring-2 ring-ink'">
+  <div v-else-if="card.kind === CardKind.PriceDraft && menu" class="card flex flex-col gap-3" :class="!card.done && !card.stale && 'ring-2 ring-ink'">
     <div class="flex items-center gap-3">
       <span class="avatar avatar-sm"><FoodIcon :name="menu.icon" :size="22" /></span>
       <strong class="min-w-0 flex-1">{{ menu.name }}</strong>
@@ -233,7 +291,91 @@ const copyOffer = async () => {
       </div>
     </div>
     <p v-if="card.done" class="flex items-center gap-2 font-semibold text-brand-deep"><Icon name="check" :size="20" />Tersimpan</p>
+    <p v-else-if="card.stale" class="text-small text-ink-2">Draf dari percakapan sebelumnya, belum tentu disimpan. Kirim ulang bila masih perlu.</p>
     <button v-else class="btn btn-sm" @click="savePrice">Simpan harga baru</button>
+  </div>
+
+  <div v-else-if="card.kind === CardKind.MenuDraft && draftMenu" class="card flex flex-col gap-3" :class="!card.done && !card.stale && 'ring-2 ring-ink'">
+    <div class="flex items-center gap-3">
+      <span class="avatar avatar-sm"><FoodIcon :name="draftMenu.icon" :size="22" /></span>
+      <div class="min-w-0 flex-1">
+        <strong class="block truncate">{{ draftMenu.name }}</strong>
+        <p class="text-tiny text-ink-2">{{ isNewMenu ? "Menu baru" : "Perubahan menu" }} · {{ draftMenu.ingredients.length }} bahan</p>
+      </div>
+    </div>
+    <div v-if="card.suggested && !card.done" class="note">
+      <Icon name="sparkles" :size="20" class="mt-px flex-none" />
+      <p>Bahan dan takaran ini saran AI dari resep yang umum. Tekan Ubah kalau resep Anda berbeda.</p>
+    </div>
+    <div v-if="card.batch && !card.done" class="note">
+      <Icon name="sparkles" :size="20" class="mt-px flex-none" />
+      <p>Takaran per porsi = belanjaan Anda dibagi {{ card.batch }} porsi.</p>
+    </div>
+    <ul class="flex flex-col gap-1.5">
+      <li v-for="item in draftMenu.ingredients" :key="item.id" class="flex items-center gap-2.5 text-small">
+        <FoodIcon :name="item.icon" :size="18" class="flex-none" />
+        <span class="min-w-0 flex-1 truncate" :class="item.needsCheck && 'text-warn'">{{ item.name }}</span>
+        <span class="num text-ink-2">{{ item.qty }} {{ UNIT_LABELS[item.unit] }}</span>
+      </li>
+    </ul>
+    <div class="grid grid-cols-3 gap-2 rounded-field bg-mist px-3.5 py-3">
+      <div>
+        <p class="text-tiny text-ink-2">Modal</p>
+        <p class="num font-semibold">{{ rupiah(hpp(draftMenu)) }}</p>
+        <p v-if="menu && !isNewMenu && !card.done" class="num text-tiny text-ink-2">dulu {{ rupiah(hpp(menu)) }}</p>
+      </div>
+      <div>
+        <p class="text-tiny text-ink-2">Harga jual</p>
+        <p class="num font-semibold">{{ rupiah(draftMenu.sellPrice) }}</p>
+      </div>
+      <div>
+        <p class="text-tiny text-ink-2">Untung</p>
+        <p class="num font-semibold"><Tip :kind="Formula.MarginNew" :calc="marginSteps(draftMenu.sellPrice, hpp(draftMenu))">{{ percent(menuMargin(draftMenu), 0) }}</Tip></p>
+        <p v-if="menu && !isNewMenu && !card.done" class="num text-tiny text-ink-2">dulu {{ percent(menuMargin(menu), 0) }}</p>
+      </div>
+    </div>
+    <div v-if="card.done" class="flex items-center justify-between gap-3">
+      <p class="flex items-center gap-2 font-semibold text-brand-deep"><Icon name="check" :size="20" />Tersimpan</p>
+      <button class="btn btn-sm btn-white" @click="router.push(`/menu/${card.menuId}`)">Buka menu</button>
+    </div>
+    <div v-else-if="savedTwin" class="flex items-center justify-between gap-3">
+      <p class="flex items-center gap-2 font-semibold text-brand-deep"><Icon name="check" :size="20" />Sudah ada di menu Anda</p>
+      <button class="btn btn-sm btn-white" @click="router.push(`/menu/${savedTwin.id}`)">Buka menu</button>
+    </div>
+    <p v-else-if="card.stale" class="text-small text-ink-2">Draf dari percakapan sebelumnya, belum tentu disimpan. Kirim ulang bila masih perlu.</p>
+    <template v-else>
+      <div v-if="isNewMenu" class="flex flex-col gap-2">
+        <label :for="`price-${draftMenu.name}`" class="label">Harga jual Anda</label>
+        <div class="input-money">
+          <span>Rp</span>
+          <input :id="`price-${draftMenu.name}`" v-model.number="card.menu.sellPrice" type="number" min="0" inputmode="numeric" />
+        </div>
+      </div>
+      <p v-if="unpriced" class="text-small text-ink-2">{{ unpriced }} bahan belum ada harga pasarnya. Tekan Ubah untuk mengisi harganya.</p>
+      <p v-else-if="!(draftMenu.sellPrice > 0)" class="text-small text-ink-2">Isi harga jual dulu.</p>
+      <p v-else-if="unchecked" class="text-small text-ink-2">{{ unchecked }} bahan perlu dicek satuannya.</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button class="btn btn-sm btn-white" @click="editMenu">Ubah</button>
+        <button class="btn btn-sm" :disabled="unpriced > 0 || savingMenu || !(draftMenu.sellPrice > 0)" @click="saveMenu">{{ savingMenu ? "Menyimpan..." : "Simpan" }}</button>
+      </div>
+    </template>
+  </div>
+
+  <div v-else-if="card.kind === CardKind.MenuDelete" class="card flex flex-col gap-3" :class="!card.done && !card.stale && menu && 'ring-2 ring-danger'">
+    <div class="flex items-center gap-3">
+      <span class="avatar avatar-sm bg-danger-soft text-danger"><Icon name="trash" :size="20" /></span>
+      <div class="min-w-0 flex-1">
+        <strong class="block truncate">Hapus {{ card.name }}</strong>
+        <p class="text-tiny text-ink-2">Menu dan resepnya hilang, tidak bisa dikembalikan.</p>
+      </div>
+    </div>
+    <p v-if="card.done" class="flex items-center gap-2 font-semibold text-brand-deep"><Icon name="check" :size="20" />Terhapus</p>
+    <p v-else-if="card.stale" class="text-small text-ink-2">Draf dari percakapan sebelumnya, belum tentu disimpan. Kirim ulang bila masih perlu.</p>
+    <p v-else-if="!menu" class="text-small text-ink-2">Menu ini sudah tidak ada.</p>
+    <div v-else class="grid grid-cols-2 gap-2">
+      <button class="btn btn-sm btn-white" @click="router.push(`/menu/${card.menuId}`)">Buka menu</button>
+      <button class="btn btn-sm btn-danger" @click="deleteMenu">Hapus</button>
+    </div>
   </div>
 
   <div v-else-if="card.kind === CardKind.Ranking" class="list">

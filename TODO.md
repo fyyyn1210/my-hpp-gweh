@@ -1,4 +1,4 @@
-- llm-provider (AI engine) and notifier (Telegram bot) not built; Telegram link in Settings is still a local dummy
+- notifier (Telegram bot) not built; Telegram link in Settings is still a local dummy
 - Firebase FCM push not built: add firebase-admin on server (device token table, send on new alert), firebase web SDK + service worker on web, FCM env keys
 - SMTP mail not built: add mailer (nodemailer) + SMTP env, use for email verification, password reset and alert emails
 - Cloudflare Turnstile not built: add widget on login/register/demo (web) + server-side token verify (TURNSTILE_SECRET_KEY) before auth
@@ -8,14 +8,16 @@
 - ClientTimezone enum guessed (Asia/Jakarta, UTC): confirm; server day boundaries are UTC, not WIB
 - web: Vue (not Next.js as in concept doc)
 - hpp engine duplicated in web (src/lib/engine.ts) and server (src/modules/hpp/hpp.engine.ts): keep formulas in sync or move to a shared package
-- web: explanation, substitutes (src/data/substitutes.ts) and catering quote run in the browser only
+- web: explanation, substitutes (src/data/substitutes.ts) and catering quote run in the browser only; assistant tools give the LLM only base numbers (cost, profit), final quote totals come from the web card
 - community price = every shared nota of other users in the same city within 7 days, no per-user dedupe; empty until real users share
 - catering buffer uses 120-day dummy PIHPS history, needs real multi-year history
 - web: no PWA manifest/service worker, no unit tests for views
 - web: units grams (butir 60g, siung 5g, etc.) are rough guesses: confirm with real conversion table
 - alerts computed live on each request, ids stable per menu/commodity (once read stays read), no history, no push (needs FCM)
-- web: assistant (src/lib/assistant.ts) understands text with keyword regex, not LLM: replace with server agent loop + tool calling (see "Rancangan Asisten AI.md"); chat history in memory only, lost on reload
-- web: assistant has no daily message limit, no number guard, no Telegram channel, no nota photo yet
+- assistant: server agent loop (POST /assistant/messages, src/modules/assistant) with tool calling; web falls back to keyword regex (src/lib/assistant.ts) when all models fail or the 50/day AI limit is hit; session = last 20 messages until 2 hours idle or "Baru"; old draft cards from history are view-only (saved state not stored); history page (/tanya/riwayat) is read-only, no "continue this chat"; messages saved before session_id existed are not listed; SSE (/assistant/messages/stream) sends status steps only, reply text is checked whole then typed out on the client (no token streaming, number guard needs the full text); add/change/delete menu via AI are draft cards only (keyword fallback has no menu tools), new menus get the dish icon, name-only requests get an AI-written typical recipe (marked "saran AI" when the owner's text has no digits; quantities are the model's guess; suggestions with a unit outside the Unit enum, e.g. "porsi", are sent back to the model to rewrite), duplicate menus are blocked by exact name only (server tool + chat card), batch recipes (one market trip / one day + batch_portions, tool asks for missing amounts, portions and sell price) are divided by the app with one portion count for all ingredients (no per-ingredient yield), unknown units like "papan" fall back to buah, ingredients without market price must be priced in Tambah menu (Ubah prefills name + recipe), sell price changes stay in draft_sell_price
+- assistant has no Telegram channel, no nota photo (vision model), no greeting started from alarms yet
+- assistant response cache is in-process (src/utils/cache.util.ts), lost on restart and not shared between instances: move to Redis when scaled
+- assistant model order (deepseek-v4-flash, glm-5.3, kimi-k2.6, deepseek-v4.1-flash, gpt-5.6-luna) is a guess: run `bun run ai:probe` and the 15-sentence test in "Rancangan Asisten AI.md"; model cooldown is in-process; README note on LLM provider and chat text going to a third party not written
 - auth: stateless refresh JWT (no server-side revoke/logout), no email verification or password reset (needs SMTP), no rate limit or bot check (needs Turnstile); POST /auth/demo logs anyone into one shared demo account: disable for production
 - server tests (`bun test`) need a local Postgres db with migrations + seed (DATABASE_SSL=false)
 - web: food icons onion, garlic, oil/kecap bottle, sugar jar, salt, cucumber are hand-drawn SVG (src/components/FoodIcon.vue); tofu/tempe uses cube icon

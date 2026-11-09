@@ -56,7 +56,7 @@ const isActive = (to: string) => (to === "/" ? route.path === "/" : route.path.s
         </div>
       </aside>
 
-      <main class="w-full max-w-[560px] px-4 pt-5 lg:max-w-[720px] lg:px-0 lg:pt-8 lg:pb-16" :class="bare ? 'pb-6' : 'pb-[130px]'">
+      <main class="w-full min-w-0 max-w-[560px] px-4 pt-5 lg:max-w-[720px] lg:px-0 lg:pt-8 lg:pb-16" :class="bare ? 'pb-6' : 'pb-[130px]'">
         <RouterView v-slot="{ Component, route: current }">
           <AnimatePresence mode="wait">
             <motion.div

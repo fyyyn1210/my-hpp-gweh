@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import FoodIcon from "@/components/FoodIcon.vue";
 import Tip from "@/components/Tip.vue";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { AnimatePresence, motion } from "motion-v";
 import Icon from "@/components/Icon.vue";
@@ -17,6 +17,7 @@ import {
   explanation,
   gramsOf,
   hpp,
+  marginOf,
   marginSteps,
   hppSeries,
   ingredientCost,
@@ -56,7 +57,21 @@ const drop = computed(() => (menu.value ? erosion(menu.value) : 0));
 const vuln = computed(() => (menu.value ? vulnerability(menu.value) : null));
 
 const range = ref(RANGE_CHOICES[1]);
-const chartValues = computed(() => (menu.value ? hppSeries(menu.value, range.value) : []));
+const menuAge = computed(() => TODAY - (menu.value?.createdDay ?? -Infinity) + 1);
+const ranges = computed(() => RANGE_CHOICES.filter((days, index) => index === 0 || RANGE_CHOICES[index - 1] < menuAge.value));
+const chartDays = computed(() => Math.max(1, Math.min(range.value, menuAge.value)));
+const chartStart = computed(() => TODAY + 1 - chartDays.value);
+const chartValues = computed(() => (menu.value ? hppSeries(menu.value, chartDays.value) : []));
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+const describeDay = (from: number, to: number, value: number) =>
+  from === to
+    ? `${capitalize(dayLabel(chartStart.value + from))}: modal ${rupiah(value)}`
+    : `${capitalize(dayLabel(chartStart.value + from))} – ${dayLabel(chartStart.value + to)}: rata-rata modal ${rupiah(value)}`;
+const chartChange = computed(() => {
+  const start = chartValues.value[0] ?? 0;
+  const delta = cost.value - start;
+  return { start, delta, pct: start > 0 ? delta / start : 0 };
+});
 
 const since = computed(() => menu.value?.priceSetDay ?? TODAY);
 const topContributors = computed(() =>
@@ -84,6 +99,21 @@ const applyPrice = () => {
   store.updateMenu(menu.value.id, { targetMargin: targetMargin.value });
   store.setSellPrice(menu.value.id, suggestion.value.rounded);
   store.showToast(`Harga jual sekarang ${rupiah(suggestion.value.rounded)}`);
+};
+
+const ownPrice = ref(menu.value?.sellPrice ?? 0);
+watch(() => menu.value?.sellPrice, (price) => (ownPrice.value = price ?? 0));
+const ownPriceChanged = computed(() => !!menu.value && ownPrice.value > 0 && ownPrice.value !== menu.value.sellPrice);
+
+const saveOwnPrice = () => {
+  if (!menu.value) return;
+  if (!(ownPrice.value > 0)) {
+    document.getElementById("own-price")?.focus();
+    return;
+  }
+  if (!ownPriceChanged.value) return;
+  store.setSellPrice(menu.value.id, ownPrice.value);
+  store.showToast(`Harga jual sekarang ${rupiah(ownPrice.value)}`);
 };
 
 const explainText = ref<string | null>(null);
@@ -271,10 +301,29 @@ const remove = () => {
         <h2>Modal per porsi</h2>
         <strong class="num text-xl">{{ rupiah(cost) }}</strong>
       </div>
-      <div class="seg">
-        <button v-for="days in RANGE_CHOICES" :key="days" :class="{ active: range === days }" @click="range = days">{{ days }} hari</button>
+      <div v-if="ranges.length > 1" class="seg">
+        <button v-for="days in ranges" :key="days" :class="{ active: chartDays === Math.min(days, menuAge) }" @click="range = days">{{ days }} hari terakhir</button>
       </div>
-      <Sparkline :values="chartValues" :labels="[dayLabel(TODAY + 1 - range), 'Hari ini']" :accent="drop > 0.005 ? '#d63a33' : '#13945a'" />
+      <p class="text-small">
+        <template v-if="chartDays === 1">Menu ini baru dibuat hari ini. Grafik modal akan terisi mulai besok.</template>
+        <template v-else-if="Math.abs(chartChange.delta) < 1">Sejak {{ dayLabel(chartStart) }} modal 1 porsi stabil di <b class="num">{{ rupiah(cost) }}</b>.</template>
+        <template v-else>
+          Modal 1 porsi {{ chartChange.delta > 0 ? "naik" : "turun" }} dari <b class="num">{{ rupiah(chartChange.start) }}</b> ({{ dayLabel(chartStart) }})
+          jadi <b class="num">{{ rupiah(cost) }}</b> hari ini,
+          <b class="num" :class="chartChange.delta > 0 ? 'text-danger' : 'text-brand-deep'">{{ chartChange.delta > 0 ? "+" : "−" }}{{ rupiah(Math.abs(chartChange.delta)) }} ({{ percent(Math.abs(chartChange.pct), 0) }})</b>.
+        </template>
+      </p>
+      <Sparkline
+        v-if="chartDays > 1"
+        :values="chartValues"
+        :labels="[capitalize(dayLabel(chartStart)), 'Hari ini']"
+        :accent="drop > 0.005 ? '#d63a33' : '#13945a'"
+        :describe="describeDay"
+      />
+      <p v-if="chartDays > 1" class="text-tiny text-ink-2">
+        Tiap kolom titik = modal 1 porsi pada hari itu. Makin tinggi kolomnya, makin mahal modalnya. Ketuk kolom untuk melihat tanggal dan modalnya.
+        <template v-if="chartDays < range">Grafik dimulai dari hari menu ini dibuat.</template>
+      </p>
       <div v-if="topContributors.length" class="flex flex-col gap-1.5">
         <p class="label">Bahan penyebab modal naik sejak {{ dayLabel(since) }}</p>
         <div v-for="item in topContributors" :key="item.ingredient.id" class="flex items-center gap-3 py-1">
@@ -318,6 +367,26 @@ const remove = () => {
           <strong class="num">{{ rupiah(cost) }}</strong>
         </div>
       </div>
+    </section>
+
+    <section class="card flex flex-col gap-3.5">
+      <div class="flex items-center gap-3">
+        <span class="avatar avatar-sm"><Icon name="tag" :size="20" /></span>
+        <h2 class="flex-1">Harga jual Anda</h2>
+      </div>
+      <label for="own-price" class="label">Ketik harga jual per porsi</label>
+      <div class="input-money">
+        <span>Rp</span>
+        <input id="own-price" v-model.number="ownPrice" type="number" min="0" inputmode="numeric" />
+      </div>
+      <p v-if="ownPrice > 0" class="text-small">
+        Untung <b class="num">{{ rupiah(ownPrice - cost) }}</b> per porsi
+        (<Tip :kind="Formula.MarginNew" :calc="marginSteps(ownPrice, cost)">{{ percent(marginOf(ownPrice, cost), 0) }}</Tip>)
+      </p>
+      <p v-else class="flex items-center gap-2 text-small font-semibold text-warn"><Icon name="info" :size="18" class="flex-none" />Isi harga jual dulu.</p>
+      <button class="btn w-full" :aria-disabled="!ownPriceChanged" @click="saveOwnPrice">
+        {{ ownPriceChanged || !(ownPrice > 0) ? "Simpan harga jual" : "Harga jual sudah tersimpan" }}
+      </button>
     </section>
 
     <section class="card flex flex-col gap-3.5">

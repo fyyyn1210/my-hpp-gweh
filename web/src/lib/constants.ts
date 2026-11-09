@@ -20,6 +20,9 @@ export const EXPLAIN_DELAY_MS = 900;
 export const PASSWORD_MIN = 6;
 export const DEMO_EMAIL = "demo@myhppgweh.id";
 export const SUGGEST_IDLE_MS = 3000;
+export const TYPING_TICK_MS = 16;
+export const TYPING_CHARS_PER_TICK = 2;
+export const ASSISTANT_FIRST_STEP = "Membaca pertanyaan...";
 export const SUGGEST_MAX_WORDS = 3;
 export const NOTA_MAX_AGE = 14;
 export const COMMUNITY_WINDOW = 7;
@@ -198,6 +201,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   NETWORK_ERROR: "Server tidak bisa dihubungi. Cek koneksi lalu coba lagi.",
   MENU_NOT_FOUND: "Menu tidak ditemukan.",
   NOTA_NOT_FOUND: "Catatan tidak ditemukan.",
+  SESSION_NOT_FOUND: "Percakapan tidak ditemukan.",
   UNKNOWN_COMMODITY: "Ada bahan yang tidak dikenal.",
 };
 export const DEFAULT_ERROR = "Gagal menyimpan. Coba lagi.";

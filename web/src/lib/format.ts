@@ -15,6 +15,9 @@ export const signedPercent = (fraction: number, digits = 1) =>
 export const shortDate = (date: Date) =>
   date.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
 
+export const dateTime = (date: Date) =>
+  `${shortDate(date)} · ${date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`;
+
 export const longDate = (date: Date) =>
   date.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 

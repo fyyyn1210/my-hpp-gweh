@@ -20,6 +20,12 @@ const { commodities, state } = useStore();
 const search = ref("");
 const selected = ref<Commodity | null>(null);
 const range = ref(RANGE_CHOICES[1]);
+const describeDay = (from: number, to: number, value: number) => {
+  const start = TODAY + 1 - range.value;
+  const day = dayLabel(start + from);
+  const label = day.charAt(0).toUpperCase() + day.slice(1);
+  return from === to ? `${label}: ${rupiah(value)}` : `${label} – ${dayLabel(start + to)}: rata-rata ${rupiah(value)}`;
+};
 
 const list = computed(() =>
   commodities
@@ -152,7 +158,7 @@ const detail = computed(() => {
           <div class="seg">
             <button v-for="days in RANGE_CHOICES" :key="days" :class="{ active: range === days }" @click="range = days">{{ days }} hari</button>
           </div>
-          <Sparkline :values="detail.series" :labels="[dayLabel(TODAY + 1 - range), 'Hari ini']" :accent="detail.change > 0 ? '#d63a33' : '#13945a'" />
+          <Sparkline :values="detail.series" :labels="[dayLabel(TODAY + 1 - range), 'Hari ini']" :accent="detail.change > 0 ? '#d63a33' : '#13945a'" :describe="describeDay" />
 
           <div v-if="detail.usedBy.length" class="flex flex-col gap-1.5">
             <h3>Dipakai di menu Anda</h3>

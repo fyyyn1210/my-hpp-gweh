@@ -21,6 +21,7 @@ const toDto = (menu: MenuRow, ingredients: IngredientRow[]) => ({
     threshold: menu.threshold,
     extraCost: menu.extraCost,
     custom: menu.custom,
+    createdAt: menu.createdAt,
     ingredients: ingredients
         .filter((item) => item.menuId === menu.id)
         .sort((a, b) => a.position - b.position)
