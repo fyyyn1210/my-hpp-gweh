@@ -1,10 +1,15 @@
+const path = require("path");
+
+const serverDir = path.join(__dirname, "server");
+
 module.exports = {
     apps: [
         {
             name: "myhpp-server",
-            cwd: "./server",
-            script: "src/index.ts",
-            interpreter: "bun",
+            cwd: serverDir,
+            script: "bun",
+            args: `--env-file=${path.join(serverDir, ".env")} src/index.ts`,
+            interpreter: "none",
             exec_mode: "fork",
             instances: 1,
             autorestart: true,
