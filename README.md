@@ -11,9 +11,6 @@ MyHPPGweh adalah penjaga margin untuk UMKM kuliner. Aplikasi menghitung HPP (har
 | Subtema | Local MSME & Creative Economy |
 | Nama tim | Tim |
 | Anggota | Rio Putra Pratama - Leader - @fyyyn1210 |
-| Aplikasi (deploy) | [ISI: URL web] |
-| Video demo | [ISI: URL YouTube] |
-| Commit final | [ISI: commit hash] |
 
 ---
 
@@ -318,9 +315,9 @@ File `.env` tidak masuk repo (lihat `.gitignore`). Jangan menulis kunci asli di 
 
 | | |
 |---|---|
-| URL | [ISI: URL web] |
-| Email | [ISI: email akun demo] |
-| Password | [ISI: password akun demo] |
+| URL | myhppgweh.vercel.app |
+| Email | cakdoni@yopmail.com |
+| Password | cakdoni@yopmail.com |
 
 Juri juga bisa membuat akun baru lewat halaman **Daftar** tanpa biaya atau akses khusus. Akun baru dimulai kosong, jadi untuk melihat alarm dan menu berisiko, gunakan akun demo yang sudah berisi menu.
 
@@ -352,7 +349,10 @@ AI diakses lewat **penyedia pihak ketiga dengan API kompatibel OpenAI** (`AI_ENG
 - **Fallback:** bila semua model gagal atau batas harian tercapai, asisten beralih ke mode kata kunci tanpa AI, dan form manual tetap bisa dipakai.
 
 ### Alat bantu pengembangan
-[ISI: sebutkan AI coding assistant yang dipakai selama pengembangan, misalnya Claude Code, dan untuk bagian apa]
+- claude code: development, testing, etc
+- chatGPT: Generate asset & logo
+- vscode: coding
+- postman: test api
 
 ## 11. Etika, privasi, dan keamanan
 
@@ -390,7 +390,7 @@ Daftar lengkap ada di `TODO.md`.
 - Bun, Elysia, Drizzle ORM, PostgreSQL, Vue, Vue Router, Vite, Tailwind CSS, motion-v, Lenis, Firebase, pino, bcryptjs, envalid. Lisensi mengikuti masing-masing pustaka (lihat `package.json` di `server/` dan `web/`).
 - Ikon: [Hugeicons](https://hugeicons.com) (paket gratis).
 - Font: [Poppins](https://fonts.google.com/specimen/Poppins), Google Fonts, SIL Open Font License.
-- Logo dan ikon aplikasi: [ISI: dibuat sendiri / sumber]
+- Logo dan ikon aplikasi: ChatGPT
 
 ### Template dan kode
 Proyek ini tidak memakai template aplikasi jadi. Struktur proyek dibuat dari awal selama Hacking Week Logicodix 2026 (7–14 November 2026).
