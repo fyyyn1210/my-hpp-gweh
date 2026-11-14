@@ -17,8 +17,11 @@ export interface ToolCall {
     function: { name: string; arguments: string };
 }
 
+export type ContentPart = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } };
+
 export type LlmMessage =
-    | { role: "system" | "user"; content: string }
+    | { role: "system"; content: string }
+    | { role: "user"; content: string | ContentPart[] }
     | { role: "assistant"; content: string | null; tool_calls?: ToolCall[] }
     | { role: "tool"; tool_call_id: string; content: string };
 
@@ -39,7 +42,10 @@ class LlmError extends Error {
 }
 
 const ENDPOINT = `${env.AI_ENGINE_BASEURL.replace(/\/+$/, "").replace(/\/v1$/, "")}/v1/chat/completions`;
-export const MODELS = [env.AI_ENGINE_MODEL, ...env.AI_ENGINE_FALLBACK_MODELS.split(",").map((model) => model.trim()).filter(Boolean)];
+const modelList = (value: string) => value.split(",").map((model) => model.trim()).filter(Boolean);
+
+export const MODELS = [env.AI_ENGINE_MODEL, ...modelList(env.AI_ENGINE_FALLBACK_MODELS)];
+export const VISION_MODELS = modelList(env.AI_ENGINE_VISION_MODELS);
 
 const coolingUntil = new Map<string, number>();
 
@@ -67,14 +73,14 @@ export const callModel = async (model: string, messages: LlmMessage[], tools?: T
     return { model, content: message.content ?? null, toolCalls: message.tool_calls ?? [], tokens: json.usage?.total_tokens ?? 0 };
 };
 
-export const complete = async (messages: LlmMessage[], tools?: ToolDefinition[]) => {
+export const complete = async (messages: LlmMessage[], tools?: ToolDefinition[], models = MODELS, timeoutMs = LLM_TIMEOUT_MS) => {
     const deadline = Date.now() + LLM_BUDGET_MS;
-    const ready = MODELS.filter((model) => (coolingUntil.get(model) ?? 0) <= Date.now());
-    for (const model of ready.length ? ready : MODELS) {
+    const ready = models.filter((model) => (coolingUntil.get(model) ?? 0) <= Date.now());
+    for (const model of ready.length ? ready : models) {
         const left = deadline - Date.now();
         if (left <= 0) break;
         try {
-            const answer = await callModel(model, messages, tools, Math.min(LLM_TIMEOUT_MS, left));
+            const answer = await callModel(model, messages, tools, Math.min(timeoutMs, left));
             coolingUntil.delete(model);
             return answer;
         } catch (err) {

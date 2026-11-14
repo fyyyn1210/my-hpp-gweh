@@ -1,6 +1,6 @@
 import { computed, ref, watch } from "vue";
 import { COMMODITIES, COMMODITY_MAP, setCommodities } from "@/data/commodities";
-import { DEFAULT_EXTRA_COST, DEFAULT_TARGET_MARGIN, DEMO_EMAIL, DEFAULT_THRESHOLD, Food, PROFILE_SAVE_DELAY_MS, TODAY } from "@/lib/constants";
+import { DEFAULT_EXTRA_COST, DEFAULT_TARGET_MARGIN, DEFAULT_THRESHOLD, Food, PROFILE_SAVE_DELAY_MS, TODAY } from "@/lib/constants";
 import { commodityChange, erosion, menuMargin, vulnerability, type Vulnerability } from "@/lib/engine";
 import { api, dayOf, errorText } from "@/lib/api";
 import { defaults, state } from "@/lib/state";
@@ -111,7 +111,6 @@ const load = async () => {
   loaded.value = true;
 };
 
-const isDemo = computed(() => state.session === DEMO_EMAIL);
 
 const unreadCount = computed(() => alarms.value.filter((alarm) => !alarm.read).length);
 
@@ -204,12 +203,6 @@ const unlinkTelegram = () => {
   state.telegramCode = "";
 };
 
-const resetDemo = () =>
-  api("/me/reset", "POST")
-    .then(load)
-    .then(() => showToast("Data contoh dikembalikan"))
-    .catch(report);
-
 const signIn = async (request: Promise<Session>) => {
   try {
     const { user, accessToken, refreshToken } = await request;
@@ -227,8 +220,6 @@ const register = (account: { email: string; name: string; city: string; shareCom
   signIn(api<Session>("/auth/register", "POST", { ...account, password }));
 
 const login = (email: string, password: string) => signIn(api<Session>("/auth/login", "POST", { email, password }));
-
-const loginDemo = () => signIn(api<Session>("/auth/demo", "POST"));
 
 const logout = () => {
   const { onboardingDone, telegramLinked, telegramCode } = state;
@@ -252,7 +243,6 @@ export const useStore = () => ({
   state,
   toast,
   loaded,
-  isDemo,
   alarms,
   unreadCount,
   ranking,
@@ -276,10 +266,8 @@ export const useStore = () => ({
   linkTelegram,
   confirmTelegram,
   unlinkTelegram,
-  resetDemo,
   register,
   login,
-  loginDemo,
   logout,
   newMenuTemplate,
 });

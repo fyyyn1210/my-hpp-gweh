@@ -14,6 +14,7 @@ import {
 export interface BookCommodity {
     id: string;
     name: string;
+    source: PriceSource;
     prices: number[];
     unitOverrides: Partial<Record<Unit, number>>;
 }
@@ -100,7 +101,7 @@ export const priceInfo = (book: PriceBook, commodity: BookCommodity, day = TODAY
     if (nota) return { price: nota.pricePerKg, source: PriceSource.Nota, day: nota.day };
     const community = communityStats(book, commodity, day);
     if (community) return { price: community.median, source: PriceSource.Community, day };
-    return { price: pihpsPrice(commodity, day) * calibrationOf(book, commodity), source: PriceSource.Pihps, day };
+    return { price: pihpsPrice(commodity, day) * calibrationOf(book, commodity), source: commodity.source, day };
 };
 
 export const commodityPrice = (book: PriceBook, commodity: BookCommodity, day = TODAY) => priceInfo(book, commodity, day).price;

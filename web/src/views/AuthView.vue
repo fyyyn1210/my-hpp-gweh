@@ -42,7 +42,6 @@ const submit = () => {
   );
 };
 
-const demo = () => finish(store.loginDemo());
 </script>
 
 <template>
@@ -111,9 +110,5 @@ const demo = () => finish(store.loginDemo());
       <RouterLink :to="joining ? '/masuk' : '/daftar'" class="font-semibold text-ink underline underline-offset-4">{{ joining ? "Masuk" : "Daftar" }}</RouterLink>
     </p>
 
-    <div v-if="!joining" class="mt-auto flex flex-col gap-2 pt-2">
-      <button class="btn btn-white w-full" :disabled="busy" @click="demo"><Icon name="store" :size="20" />Coba akun demo</button>
-      <p class="text-center text-tiny text-ink-2">Tanpa daftar. Memakai data contoh warung Bu Sari.</p>
-    </div>
   </section>
 </template>

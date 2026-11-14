@@ -10,7 +10,9 @@ const view = computed(
     ({
       [PriceSource.Nota]: { text: "Nota Anda", cls: "bg-brand-soft text-brand-deep" },
       [PriceSource.Community]: { text: "Komunitas", cls: "bg-info-soft text-info" },
-      [PriceSource.Pihps]: { text: "PIHPS", cls: "bg-mist text-ink-2" },
+      [PriceSource.Pihps]: { text: "Bank Indonesia", cls: "bg-mist text-ink-2" },
+      [PriceSource.Sp2kp]: { text: "Kemendag", cls: "bg-mist text-ink-2" },
+      [PriceSource.Reference]: { text: "Perkiraan", cls: "bg-warn-soft text-[#835600]" },
       [PriceSource.Manual]: { text: "Harga tetap Anda", cls: "bg-warn-soft text-[#835600]" },
     })[props.source],
 );

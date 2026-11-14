@@ -4,9 +4,9 @@ import { commodityChange, hpp, ingredientCost, marginOf, priceInfo, statusOf } f
 import type { ToolDefinition } from "#src/modules/assistant/llm.provider.js";
 import type { MenuDto } from "#src/modules/menus/menu.service.js";
 import { findCommodity, parseRecipeText, type ParsedIngredient } from "#src/modules/recipes/recipe.parser.js";
-import { BATCH_SMALL_UNITS, BUY_UNITS, CardKind, COMMON_MENU_WORDS, MENU_NAME_MAX, NEW_MENU_DEFAULTS, PORTION_CHOICES, ToolName, WHEN_CHOICES } from "#src/utils/assistant.constant.js";
+import { BATCH_SMALL_UNITS, BUY_UNITS, CardKind, COMMON_MENU_WORDS, MENU_NAME_MAX, NEW_MENU_DEFAULTS, PACK_UNIT, PORTION_CHOICES, ToolName, WHEN_CHOICES } from "#src/utils/assistant.constant.js";
 import { percent, rupiah } from "#src/utils/format.util.js";
-import { Food, TODAY, UNIT_ALIASES, UNITS, WEEK } from "#src/utils/hpp.constant.js";
+import { Food, TODAY, Unit, UNIT_ALIASES, UNITS, WEEK } from "#src/utils/hpp.constant.js";
 
 type DraftIngredient = Omit<ParsedIngredient, "needsCheck"> & { needsCheck?: boolean };
 
@@ -41,6 +41,7 @@ export interface ToolResult {
     text: string;
     summary?: Record<string, unknown>;
     card?: Card;
+    cards?: Card[];
     choices?: Choice[];
     ask?: boolean;
 }
@@ -240,14 +241,35 @@ const cateringQuote = (ctx: ToolContext, args: Args): ToolResult => {
     };
 };
 
+const untrackedNota = (name: string): ToolResult => ({
+    text: `${name} belum ada di daftar harga bahan, jadi belum bisa dicatat sebagai nota. Harga ${name} bisa dimasukkan di resep menu lewat Ubah menu.`,
+    summary: { ingredient: name, tracked: false, saved: false },
+});
+
 const draftNota = (ctx: ToolContext, args: Args): ToolResult => {
+    const items = (Array.isArray(args.items) ? args.items : [args]).filter((item): item is Args => typeof item === "object" && item !== null);
+    const named = items.filter((item) => label(item.ingredient));
+    if (named.length <= 1) return draftNotaItem(ctx, named[0] ?? items[0] ?? {});
+    const results = named.map((item) => draftNotaItem(ctx, item));
+    return {
+        text: results.map((result) => result.text).join(" "),
+        summary: { items: results.map((result) => result.summary ?? { message: result.text }) },
+        cards: results.flatMap((result) => (result.card ? [result.card] : [])),
+    };
+};
+
+const draftNotaItem = (ctx: ToolContext, args: Args): ToolResult => {
+    const named = label(args.ingredient);
+    if (named && !findCommodity(named.toLowerCase(), Object.values(ctx.book.commodities))) return untrackedNota(named);
     const commodity = pickCommodity(ctx, args, "Bahan apa yang dibeli?");
     if (isResult(commodity)) return commodity;
     const total = positive(args.total_price);
     if (!total) return { text: `Berapa total bayar ${commodity.name.toLowerCase()}? Contoh: 75 ribu.`, ask: true };
     const unit = words(args.unit);
-    const unitKey = BUY_UNITS[unit] ? unit : commodity.priceUnit === "liter" ? "liter" : "kg";
-    const amount = positive(args.amount) ?? 1;
+    const count = positive(args.amount) ?? 1;
+    const packGrams = unit === PACK_UNIT ? commodity.unitOverrides[Unit.Buah] : undefined;
+    const unitKey = packGrams ? "kg" : BUY_UNITS[unit] ? unit : commodity.priceUnit === "liter" ? "liter" : "kg";
+    const amount = packGrams ? Math.round(count * packGrams) / 1000 : count;
     return {
         text: `Saya siapkan catatan ${commodity.name.toLowerCase()} ${amount} ${unitKey} seharga ${rupiah(total)}. Cek dulu, lalu tekan Simpan.`,
         summary: { ingredient: commodity.name, amount, unit: unitKey, totalPrice: money(total), pricePerKg: money(total / (amount * BUY_UNITS[unitKey])), saved: false },
@@ -404,11 +426,19 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
         days_ahead: { type: "number", description: "Days from today until the event" },
         target_profit_percent: { type: "number", description: "Wanted profit in percent, e.g. 30. Omit if not said" },
     }),
-    tool(ToolName.DraftNota, "Prepare a purchase note for the owner to confirm. Does not save.", {
-        ...INGREDIENT_ARG,
-        amount: { type: "number", description: "Amount bought, e.g. 2" },
-        unit: { type: "string", enum: Object.keys(BUY_UNITS) },
-        total_price: { type: "number", description: "Total paid in rupiah, e.g. 150000 for '150 ribu'" },
+    tool(ToolName.DraftNota, "Prepare purchase notes for the owner to confirm. Does not save. Put every bought item in one call.", {
+        items: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    ...INGREDIENT_ARG,
+                    amount: { type: "number", description: "Amount bought, e.g. 2" },
+                    unit: { type: "string", enum: [...Object.keys(BUY_UNITS), PACK_UNIT], description: `Use ${PACK_UNIT} for pieces or packs, e.g. 12 bungkus mie instan = amount 12 unit ${PACK_UNIT}` },
+                    total_price: { type: "number", description: "Total paid in rupiah, e.g. 150000 for '150 ribu'" },
+                },
+            },
+        },
     }),
     tool(ToolName.DraftSellPrice, "Prepare a new selling price for a menu for the owner to confirm. Does not save.", {
         ...MENU_ARG,

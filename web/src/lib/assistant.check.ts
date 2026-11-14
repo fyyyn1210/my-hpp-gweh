@@ -1,18 +1,36 @@
-import { CATALOG, SAMPLE_MENUS } from "../../../server/src/drizzle/seeds/catalog";
+import { CATALOG } from "../../../server/src/drizzle/seeds/catalog";
 import { dummyPihpsSeries } from "../../../server/src/modules/commodities/pihps.dummy";
 import { setCommodities } from "@/data/commodities";
 import { CardKind, amountOf, daysOf, moneyOf, portionsOf, respond } from "./assistant";
-import { TODAY } from "./constants";
+import { Food, TODAY } from "./constants";
 import { state } from "./state";
-import type { Menu } from "./types";
+import { PriceSource, Unit, type Menu } from "./types";
 
-setCommodities(CATALOG.map(({ basePrice, trend, volatility, seed, unitOverrides, ...item }) => ({ ...item, unitOverrides: unitOverrides ?? {}, prices: dummyPihpsSeries({ basePrice, trend, volatility, seed, ...item }) })));
-state.menus = SAMPLE_MENUS.map(({ daysAgo, ingredients, ...menu }) => ({
-  ...menu,
-  id: `menu-${menu.name.toLowerCase().replace(/\s+/g, "-")}`,
-  priceSetDay: TODAY - daysAgo,
-  ingredients: ingredients.map((item, index) => ({ ...item, id: `i${index}` })),
-})) as Menu[];
+setCommodities(CATALOG.map(({ basePrice, trend, volatility, seed, unitOverrides, ...item }) => ({ ...item, source: PriceSource.Pihps, unitOverrides: unitOverrides ?? {}, prices: dummyPihpsSeries({ basePrice, trend, volatility, seed, ...item }) })));
+const fixture = (name: string, icon: Food, sellPrice: number, ingredients: Array<[string, number, Unit, string]>): Menu => ({
+  id: `menu-${name.toLowerCase().replace(/\s+/g, "-")}`,
+  name,
+  icon,
+  sellPrice,
+  priceSetDay: TODAY - 30,
+  targetMargin: 0.3,
+  threshold: 0.2,
+  extraCost: 1500,
+  ingredients: ingredients.map(([itemName, qty, unit, commodityId], index) => ({
+    id: `i${index}`,
+    name: itemName,
+    icon: Food.Ingredient,
+    qty,
+    unit,
+    commodityId,
+    manualPricePerKg: null,
+  })),
+});
+state.menus = [
+  fixture("Ayam Geprek", Food.Chicken, 19000, [["Daging ayam", 150, Unit.Gram, "ayam"], ["Cabai rawit", 40, Unit.Gram, "cabai-rawit"], ["Beras", 120, Unit.Gram, "beras"]]),
+  fixture("Pecel Lele", Food.Fish, 18000, [["Cabai rawit", 30, Unit.Gram, "cabai-rawit"], ["Beras", 120, Unit.Gram, "beras"]]),
+  fixture("Soto Ayam", Food.Dish, 17000, [["Daging ayam", 100, Unit.Gram, "ayam"], ["Beras", 100, Unit.Gram, "beras"]]),
+];
 
 const expect = (label: string, actual: unknown, wanted: unknown) => {
   if (JSON.stringify(actual) !== JSON.stringify(wanted)) throw new Error(`${label}: got ${JSON.stringify(actual)}, want ${JSON.stringify(wanted)}`);

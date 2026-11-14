@@ -309,6 +309,12 @@ export const loadSessions = () => api<ChatSession[]>("/assistant/sessions");
 
 export const loadSession = async (id: string) => toChat(await api<StoredMessage[]>(`/assistant/sessions/${id}`));
 
+export const readPhoto = (photo: File) => {
+  const form = new FormData();
+  form.append("photo", photo);
+  return api<{ text: string }>("/assistant/photo", "POST", form);
+};
+
 export const resetChat = () => {
   pending = "";
   chat.splice(0, chat.length);

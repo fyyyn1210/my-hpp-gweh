@@ -4,9 +4,10 @@ import type { MenuDto } from "#src/modules/menus/menu.service.js";
 import { listNotas } from "#src/modules/notas/nota.service.js";
 import type { User } from "#src/drizzle/schemas/index.js";
 import { dayIndex } from "#src/utils/date.util.js";
+import { regionOfCity } from "#src/utils/hpp.constant.js";
 
 export const loadBook = async (user: User) => {
-    const [items, notas, votes] = await Promise.all([listCommodities(), listNotas(user.id), communityVotes(user.id, user.city)]);
+    const [items, notas, votes] = await Promise.all([listCommodities(regionOfCity(user.city)), listNotas(user.id), communityVotes(user.id, user.city)]);
     return {
         commodities: Object.fromEntries(items.map((item) => [item.id, item])),
         notas: notas.map((nota) => ({ ...nota, day: dayIndex(nota.recordedAt) })),

@@ -30,10 +30,14 @@ export enum AlarmKind {
   PriceSurge = "price_surge",
 }
 
+export type MarketSource = PriceSource.Pihps | PriceSource.Sp2kp | PriceSource.Reference;
+
 export enum PriceSource {
   Nota = "nota",
   Community = "community",
   Pihps = "pihps",
+  Sp2kp = "sp2kp",
+  Reference = "reference",
   Manual = "manual",
 }
 
@@ -42,6 +46,7 @@ export interface Commodity {
   name: string;
   icon: Food;
   priceUnit: string;
+  source: MarketSource;
   prices: number[];
   aliases: string[];
   unitOverrides?: Partial<Record<Unit, number>>;

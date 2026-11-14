@@ -1,8 +1,8 @@
 import { Elysia, t } from "elysia";
 import { authMiddleware } from "#src/middlewares/auth.middleware.js";
-import { currentSession, getSession, listSessions, resetSession, sendMessage } from "#src/modules/assistant/assistant.service.js";
+import { currentSession, getSession, listSessions, readPhoto, resetSession, sendMessage } from "#src/modules/assistant/assistant.service.js";
 import { logger } from "#src/configs/pino.config.js";
-import { MESSAGE_MAX, StreamEvent } from "#src/utils/assistant.constant.js";
+import { MESSAGE_MAX, PHOTO_MAX_SIZE, StreamEvent } from "#src/utils/assistant.constant.js";
 import response, { FaultError } from "#src/utils/response.util.js";
 
 const messageSchema = { body: t.Object({ text: t.String({ minLength: 1, maxLength: MESSAGE_MAX }) }) };
@@ -36,6 +36,9 @@ export const assistantController = new Elysia({ prefix: "/assistant", detail: { 
         set.headers["cache-control"] = "no-cache";
         return new Response(streamReply(userId, body.text));
     }, messageSchema)
+    .post("/photo", async ({ userId, body }) => response({ data: await readPhoto(userId, body.photo) }), {
+        body: t.Object({ photo: t.File({ maxSize: PHOTO_MAX_SIZE }) }),
+    })
     .post("/reset", async ({ userId }) => {
         await resetSession(userId);
         return response({ message: "ASSISTANT_RESET", data: null });

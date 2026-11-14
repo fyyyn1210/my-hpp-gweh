@@ -2,6 +2,9 @@ import { Elysia } from "elysia";
 import env from "#src/configs/env.config.js";
 import openapi from "@elysiajs/openapi";
 import cors from "@elysiajs/cors";
+import { cron } from "@elysiajs/cron";
+import { syncPrices } from "#src/modules/commodities/price.sync.js";
+import { PIHPS_SYNC_CRON } from "#src/utils/pihps.constant.js";
 import response, { FaultError } from "#src/utils/response.util.js";
 import { logger } from "#src/configs/pino.config.js";
 import type { Context } from "elysia";
@@ -14,7 +17,7 @@ import { notaController } from "#src/modules/notas/nota.controller.js";
 import { profileController } from "#src/modules/profile/profile.controller.js";
 import { recipeController } from "#src/modules/recipes/recipe.controller.js";
 
-const siteAllowed = env.NODE_ENV !== "production" ? ["*"] : [];
+const siteAllowed = env.NODE_ENV !== "production" ? true : [];
 
 export const app = new Elysia()
     .use(cors({ origin: siteAllowed }))
@@ -114,7 +117,13 @@ export const app = new Elysia()
         .use(assistantController));
 
 if (import.meta.main) {
-    app.onStart(({ server }) => {
+    app.use(cron({
+        name: "price-sync",
+        pattern: PIHPS_SYNC_CRON,
+        timezone: "UTC",
+        protect: true,
+        run: () => syncPrices().catch((error) => logger.error({ error: String(error) }, "Price sync cron failed")),
+    })).onStart(({ server }) => {
         console.log(`Server run on port:${server?.port}`);
     }).listen(env.APP_PORT);
 }

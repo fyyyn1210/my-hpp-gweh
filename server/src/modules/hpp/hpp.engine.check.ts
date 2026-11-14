@@ -5,7 +5,7 @@ const assert = (ok: boolean, label: string) => {
     if (!ok) throw new Error(label);
 };
 
-const chili = { id: "chili", name: "Cabai", prices: Array(TODAY + 1).fill(40000), unitOverrides: { [Unit.Butir]: 3 } };
+const chili = { id: "chili", name: "Cabai", source: PriceSource.Pihps, prices: Array(TODAY + 1).fill(40000), unitOverrides: { [Unit.Butir]: 3 } };
 const book: PriceBook = { commodities: { chili }, notas: [], votes: [], shareCommunity: true };
 const menu = { id: "m", name: "M", sellPrice: 10000, priceSetDay: TODAY - 10, threshold: 0.2, extraCost: 1000, ingredients: [
     { qty: 100, unit: Unit.Gram, commodityId: "chili", manualPricePerKg: null },
@@ -13,7 +13,8 @@ const menu = { id: "m", name: "M", sellPrice: 10000, priceSetDay: TODAY - 10, th
     { qty: 200, unit: Unit.Gram, commodityId: null, manualPricePerKg: 10000 },
 ] };
 
-assert(priceInfo(book, chili).source === PriceSource.Pihps, "pihps fallback");
+assert(priceInfo(book, chili).source === PriceSource.Pihps, "market source fallback");
+assert(priceInfo(book, { ...chili, source: PriceSource.Sp2kp }).source === PriceSource.Sp2kp, "market source follows commodity");
 assert(Math.abs(hpp(book, menu) - (4000 + 1200 + 2000 + 1000)) < 1e-6, "hpp sums grams, overrides, manual and extra cost");
 assert(marginOf(10000, 8200) - 0.18 < 1e-9 && statusOf(book, menu) === Status.Warning, "warning under threshold");
 

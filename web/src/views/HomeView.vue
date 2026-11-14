@@ -183,6 +183,6 @@ const openAlarm = (menuIds: string[]) => router.push(menuIds.length === 1 ? `/me
       </div>
     </section>
 
-    <p class="text-center text-tiny text-ink-2">Harga PIHPS di versi ini masih contoh, bukan harga pasar asli.</p>
+    <p class="text-center text-tiny text-ink-2">Harga pasar dari PIHPS Bank Indonesia dan SP2KP Kemendag, acuan tren, bukan harga pasti.</p>
   </div>
 </template>

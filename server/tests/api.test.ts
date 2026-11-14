@@ -13,10 +13,10 @@ const call = async (method: string, path: string, body?: unknown, token?: string
 const email = `tes-${Date.now()}@warung.test`;
 let access = "";
 let refresh = "";
-let demo = "";
+let other = "";
 
 describe("api", () => {
-    test("register seeds sample data and rejects duplicates", async () => {
+    test("register starts empty and rejects duplicates", async () => {
         const res = await call("POST", "/auth/register", { name: "Tes", email: email.toUpperCase(), password: "rahasia1", city: "Bandung", shareCommunity: true });
         expect(res.status).toBe(201);
         expect(res.json.data.user.email).toBe(email);
@@ -28,6 +28,7 @@ describe("api", () => {
         const again = await call("POST", "/auth/register", { name: "Tes", email, password: "rahasia1", city: "Bandung", shareCommunity: true });
         expect(again.status).toBe(409);
         expect(again.json.message).toBe("EMAIL_TAKEN");
+        other = (await call("POST", "/auth/register", { name: "Lain", email: `lain-${Date.now()}@warung.test`, password: "rahasia1", city: "Surabaya", shareCommunity: true })).json.data.accessToken;
     });
 
     test("login, wrong password, refresh and guard", async () => {
@@ -48,17 +49,20 @@ describe("api", () => {
         expect(commodities.json.data.length).toBe(10);
         expect(commodities.json.data[0].prices.length).toBe(120);
         expect((await call("GET", "/alerts", undefined, access)).json.data.length).toBe(0);
-        demo = (await call("POST", "/auth/demo")).json.data.accessToken;
-        const alerts = await call("GET", "/alerts", undefined, demo);
+        await call("POST", "/menus", {
+            name: "Ayam Rugi", icon: "chicken", sellPrice: 1000, targetMargin: 0.3, threshold: 0.2, extraCost: 0,
+            ingredients: [{ name: "Ayam", icon: "chicken", qty: 200, unit: "gram", commodityId: "ayam", manualPricePerKg: null }],
+        }, access);
+        const alerts = await call("GET", "/alerts", undefined, access);
         expect(alerts.json.data.length).toBeGreaterThan(0);
-        await call("POST", "/alerts/read", { ids: [alerts.json.data[0].id] }, demo);
-        expect((await call("GET", "/alerts", undefined, demo)).json.data[0].read).toBe(true);
+        await call("POST", "/alerts/read", { ids: [alerts.json.data[0].id] }, access);
+        expect((await call("GET", "/alerts", undefined, access)).json.data[0].read).toBe(true);
     });
 
     test("menu crud", async () => {
-        const list = await call("GET", "/menus", undefined, demo);
-        expect(list.json.data.length).toBe(6);
-        expect(list.json.data[0].name).toBe("Ayam Geprek");
+        const list = await call("GET", "/menus", undefined, access);
+        expect(list.json.data.length).toBe(1);
+        expect(list.json.data[0].name).toBe("Ayam Rugi");
         const created = await call("POST", "/menus", {
             name: "Nasi Ayam", icon: "chicken", sellPrice: 15000, targetMargin: 0.3, threshold: 0.2, extraCost: 1000,
             ingredients: [{ name: "Ayam", icon: "chicken", qty: 100, unit: "gram", commodityId: "ayam", manualPricePerKg: null }],
@@ -76,19 +80,12 @@ describe("api", () => {
     test("notas, community and recipe parser", async () => {
         const nota = await call("POST", "/notas", { commodityId: "cabai-rawit", pricePerKg: 80000, shared: true }, access);
         expect(nota.status).toBe(201);
-        const votes = await call("GET", "/commodities/community", undefined, demo);
+        const votes = await call("GET", "/commodities/community", undefined, other);
         expect(votes.json.data.some((vote: any) => vote.pricePerKg === 80000)).toBe(true);
-        expect((await call("DELETE", `/notas/${nota.json.data.id}`, undefined, demo)).status).toBe(404);
+        expect((await call("DELETE", `/notas/${nota.json.data.id}`, undefined, other)).status).toBe(404);
         expect((await call("DELETE", `/notas/${nota.json.data.id}`, undefined, access)).status).toBe(200);
         const parsed = await call("POST", "/recipes/parse", { text: "150 gram daging ayam\n2 sdm kecap" }, access);
         expect(parsed.json.data[0].commodityId).toBe("ayam");
         expect(parsed.json.data[1].manualPricePerKg).toBe(25000);
-    });
-
-    test("reset restores sample data on the demo account only", async () => {
-        expect((await call("POST", "/me/reset", undefined, access)).status).toBe(403);
-        await call("DELETE", `/menus/${(await call("GET", "/menus", undefined, demo)).json.data[0].id}`, undefined, demo);
-        await call("POST", "/me/reset", undefined, demo);
-        expect((await call("GET", "/menus", undefined, demo)).json.data.length).toBe(6);
     });
 });

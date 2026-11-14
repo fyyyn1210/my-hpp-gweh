@@ -1,12 +1,14 @@
-import { and, asc, eq, gte, ne, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, ne, sql } from "drizzle-orm";
 import db from "#src/configs/database.config.js";
 import { commodities, commodityPrices, notas, users } from "#src/drizzle/schemas/index.js";
+import { FULL_CATALOG } from "#src/drizzle/seeds/catalog.js";
 import { dateOfDay, dayIndex } from "#src/utils/date.util.js";
-import { PriceSource, TODAY } from "#src/utils/hpp.constant.js";
+import { NATIONAL_REGION, PriceSource, TODAY } from "#src/utils/hpp.constant.js";
 
 export interface PriceRow {
     commodityId: string;
     source: PriceSource;
+    region: string;
     price: number;
     priceDate: Date;
 }
@@ -17,29 +19,40 @@ const fillSeries = (points: Map<number, number>) => {
     return Array.from({ length: TODAY + 1 }, (_, day) => (last = points.get(day) ?? last));
 };
 
-export const listCommodities = async () => {
+const MARKET_SOURCES = [PriceSource.Pihps, PriceSource.Sp2kp];
+const REFERENCE_PRICES = new Map(FULL_CATALOG.flatMap((item) => (item.referencePrice ? [[item.id, item.referencePrice] as const] : [])));
+
+export const listCommodities = async (region = NATIONAL_REGION) => {
     const [items, prices] = await Promise.all([
         db.select().from(commodities).orderBy(asc(commodities.sortOrder)),
         db.select().from(commodityPrices)
-            .where(and(eq(commodityPrices.source, PriceSource.Pihps), gte(commodityPrices.priceDate, dateOfDay(0))))
+            .where(and(inArray(commodityPrices.source, MARKET_SOURCES), inArray(commodityPrices.region, [NATIONAL_REGION, region]), gte(commodityPrices.priceDate, dateOfDay(0))))
             .orderBy(asc(commodityPrices.priceDate)),
     ]);
     const points = new Map<string, Map<number, number>>();
-    for (const row of prices) {
-        const day = dayIndex(row.priceDate);
-        if (day > TODAY) continue;
-        if (!points.has(row.commodityId)) points.set(row.commodityId, new Map());
-        points.get(row.commodityId)!.set(day, row.price);
+    for (const scope of [NATIONAL_REGION, region]) {
+        const scoped = new Map<string, Map<number, number>>();
+        for (const row of prices) {
+            const day = dayIndex(row.priceDate);
+            if (row.region !== scope || day > TODAY) continue;
+            const key = `${row.commodityId}|${row.source}`;
+            if (!scoped.has(key)) scoped.set(key, new Map());
+            scoped.get(key)!.set(day, row.price);
+        }
+        for (const [key, series] of scoped) points.set(key, series);
     }
-    return items
-        .filter((item) => points.has(item.id))
-        .map(({ sortOrder, ...item }) => ({ ...item, prices: fillSeries(points.get(item.id)!) }));
+    return items.flatMap(({ sortOrder, ...item }) => {
+        const source = MARKET_SOURCES.find((candidate) => points.has(`${item.id}|${candidate}`));
+        if (source) return [{ ...item, source, prices: fillSeries(points.get(`${item.id}|${source}`)!) }];
+        const reference = REFERENCE_PRICES.get(item.id);
+        return reference ? [{ ...item, source: PriceSource.Reference, prices: Array<number>(TODAY + 1).fill(reference) }] : [];
+    });
 };
 
 export const ingestPrices = async (rows: PriceRow[]) => {
     if (rows.length === 0) return 0;
     await db.insert(commodityPrices).values(rows).onConflictDoUpdate({
-        target: [commodityPrices.commodityId, commodityPrices.source, commodityPrices.priceDate],
+        target: [commodityPrices.commodityId, commodityPrices.source, commodityPrices.region, commodityPrices.priceDate],
         set: { price: sql`excluded.price` },
     });
     return rows.length;

@@ -68,8 +68,15 @@ export const TOOL_CARDS: Partial<Record<ToolName, CardKind>> = {
 };
 
 export const MESSAGE_MAX = 400;
+export const PHOTO_MAX_SIZE = "5m";
+export const PHOTO_TIMEOUT_MS = 20_000;
+export const PHOTO_UNREADABLE = "UNREADABLE";
+export const PHOTO_PROMPT = `You read photos of purchase receipts (nota) from Indonesian traditional markets and shops.
+Write every bought item as a short Indonesian sentence: "beli <amount> <unit> <item> <total price in rupiah>", e.g. "beli 2 kg cabai rawit 150000".
+Join items with "; ". Use kg, ons, gram or liter when the unit is clear. Skip totals, taxes, store names and dates.
+Keep only food, drinks and cooking ingredients. Skip everything else such as medicine, toiletries, baby care and household goods.
+Plain text only, no markdown. If the photo is not a receipt or has no food item, answer exactly ${PHOTO_UNREADABLE}.`;
 export const DAILY_LIMIT = 50;
-export const DEMO_DAILY_LIMIT = 200;
 export const HISTORY_LIMIT = 20;
 export const HISTORY_CHARS = 6000;
 export const SESSION_IDLE_MS = 2 * 60 * 60 * 1000;
@@ -97,6 +104,7 @@ export const BATCH_SMALL_UNITS: Partial<Record<Unit, { unit: Unit; factor: numbe
     [Unit.Liter]: { unit: Unit.Ml, factor: 1000 },
 };
 export const BUY_UNITS: Record<string, number> = { kg: 1, ons: 0.1, gram: 0.001, liter: 1 };
+export const PACK_UNIT = "buah";
 export const PORTION_CHOICES = [50, 100, 200, 500];
 export const WHEN_CHOICES = [
     { label: "1 minggu lagi", days: 7 },

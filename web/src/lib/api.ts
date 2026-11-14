@@ -12,14 +12,19 @@ export class ApiError extends Error {
 
 export const errorText = (error: unknown) => (error instanceof ApiError && ERROR_MESSAGES[error.code]) || DEFAULT_ERROR;
 
-const send = (path: string, method: string, body?: unknown) =>
-  fetch(`${API_URL}${path}`, {
+const BASE_HEADERS = { "Content-Type": "application/json", "ngrok-skip-browser-warning": "1" };
+
+const send = (path: string, method: string, body?: unknown) => {
+  const form = body instanceof FormData;
+  const { "Content-Type": json, ...base } = BASE_HEADERS;
+  return fetch(`${API_URL}${path}`, {
     method,
-    headers: { "Content-Type": "application/json", ...(state.accessToken ? { Authorization: `Bearer ${state.accessToken}` } : {}) },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    headers: { ...base, ...(form ? {} : { "Content-Type": json }), ...(state.accessToken ? { Authorization: `Bearer ${state.accessToken}` } : {}) },
+    body: body === undefined ? undefined : form ? body : JSON.stringify(body),
   }).catch(() => {
     throw new ApiError("NETWORK_ERROR", 0);
   });
+};
 
 let renewing: Promise<boolean> | null = null;
 
@@ -28,7 +33,7 @@ const renew = () =>
     if (!state.refreshToken) return false;
     const res = await fetch(`${API_URL}/auth/refresh`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: BASE_HEADERS,
       body: JSON.stringify({ refreshToken: state.refreshToken }),
     }).catch(() => null);
     if (!res?.ok) return false;

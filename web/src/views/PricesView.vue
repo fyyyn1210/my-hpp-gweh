@@ -11,7 +11,7 @@ import TrendTag from "@/components/TrendTag.vue";
 import { useStore } from "@/lib/store";
 import { calibrationOf, commodityChange, communityStats, latestNota, pihpsPrice, priceInfo } from "@/lib/engine";
 import { commoditySeries } from "@/data/commodities";
-import { COMMUNITY_MIN, Formula, RANGE_CHOICES, TODAY, WEEK } from "@/lib/constants";
+import { COMMUNITY_MIN, Formula, MARKET_SOURCE_ORDER, MARKET_SOURCES, PRICE_ATTRIBUTION, PRICE_DISCLAIMER, RANGE_CHOICES, TODAY, WEEK } from "@/lib/constants";
 import { dayLabel, percent, rupiah, thousands } from "@/lib/format";
 import { PriceSource, type Commodity } from "@/lib/types";
 
@@ -43,6 +43,7 @@ const detail = computed(() => {
     nota: latestNota(commodity.id),
     community: communityStats(commodity),
     pihps: pihpsPrice(commodity),
+    market: MARKET_SOURCES[commodity.source],
     calibration: calibrationOf(commodity),
     usedBy: state.menus.filter((menu) => menu.ingredients.some((item) => item.commodityId === commodity.id)),
     series,
@@ -64,7 +65,7 @@ const detail = computed(() => {
       <span class="text-tiny text-ink-2">Urutan sumber harga:</span>
       <SourceTag :source="PriceSource.Nota" /><span class="text-tiny text-ink-2">lalu</span>
       <SourceTag :source="PriceSource.Community" /><span class="text-tiny text-ink-2">lalu</span>
-      <SourceTag :source="PriceSource.Pihps" />
+      <template v-for="(source, index) in MARKET_SOURCE_ORDER" :key="source"><SourceTag :source="source" /><span v-if="index < MARKET_SOURCE_ORDER.length - 1" class="text-tiny text-ink-2">atau</span></template>
     </div>
 
     <div v-if="!list.length" class="card text-ink-2">Bahan tidak ditemukan.</div>
@@ -81,6 +82,11 @@ const detail = computed(() => {
           <TrendTag :value="item.week" class="text-tiny" /> <span class="text-tiny text-ink-2">7 hari</span>
         </span>
       </button>
+    </div>
+
+    <div class="flex flex-col gap-1.5 px-1 text-tiny text-ink-2">
+      <p>{{ PRICE_DISCLAIMER }}</p>
+      <p>{{ PRICE_ATTRIBUTION }}</p>
     </div>
 
     <AnimatePresence>
@@ -142,9 +148,9 @@ const detail = computed(() => {
             <div class="list-row">
               <span class="avatar avatar-sm bg-white"><Icon name="chart" :size="20" /></span>
               <span class="min-w-0 flex-1">
-                <strong>PIHPS (data pemerintah)</strong>
+                <strong>{{ detail.market.title }}</strong>
                 <span class="block text-tiny text-ink-2">
-                  rata-rata pasar kota<template v-if="Math.abs(detail.calibration - 1) > 0.005">, nota Anda biasanya <Tip :kind="Formula.Calibration">{{ percent(Math.abs(detail.calibration - 1), 0) }}</Tip> {{ detail.calibration > 1 ? "lebih mahal" : "lebih murah" }}</template>
+                  {{ detail.market.note }}<template v-if="Math.abs(detail.calibration - 1) > 0.005">, nota Anda biasanya <Tip :kind="Formula.Calibration">{{ percent(Math.abs(detail.calibration - 1), 0) }}</Tip> {{ detail.calibration > 1 ? "lebih mahal" : "lebih murah" }}</template>
                 </span>
               </span>
               <strong class="num">{{ rupiah(detail.pihps) }}</strong>
@@ -152,7 +158,7 @@ const detail = computed(() => {
           </div>
 
           <div class="flex items-center justify-between gap-3">
-            <h3>Tren harga PIHPS</h3>
+            <h3>Tren harga {{ detail.market.title }}</h3>
             <TrendTag :value="detail.change" />
           </div>
           <div class="seg">

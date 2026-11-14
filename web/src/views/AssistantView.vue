@@ -6,8 +6,9 @@ import CardSkeleton from "@/components/CardSkeleton.vue";
 import ChatBubble from "@/components/ChatBubble.vue";
 import Icon from "@/components/Icon.vue";
 import PageHead from "@/components/PageHead.vue";
-import { chat, greeting, loadHistory, reply, resetChat, suggestions, type Choice, type Step } from "@/lib/assistant";
-import { ASSISTANT_FIRST_STEP, SUGGEST_IDLE_MS, SUGGEST_MAX_WORDS } from "@/lib/constants";
+import { chat, greeting, loadHistory, readPhoto, reply, resetChat, suggestions, type Choice, type Step } from "@/lib/assistant";
+import { errorText } from "@/lib/api";
+import { ASSISTANT_FIRST_STEP, ASSISTANT_PHOTO_STEP, SUGGEST_IDLE_MS, SUGGEST_MAX_WORDS } from "@/lib/constants";
 import { uid } from "@/lib/format";
 
 type Recognizer = { lang: string; onresult: (event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void; onend: () => void; start: () => void };
@@ -79,6 +80,25 @@ const send = (text: string, label = text) => {
     scrollDown();
     waitIdle();
   });
+};
+
+const pickPhoto = (event: Event) => {
+  const field = event.target as HTMLInputElement;
+  const photo = field.files?.[0];
+  field.value = "";
+  if (!photo || thinking.value) return;
+  thinking.value = true;
+  step.value = { text: ASSISTANT_PHOTO_STEP };
+  idle.value = false;
+  scrollDown();
+  readPhoto(photo)
+    .then(({ text }) => (input.value = text))
+    .catch((error) => chat.push({ id: uid("msg"), mine: false, text: errorText(error), animate: true }))
+    .finally(() => {
+      thinking.value = false;
+      scrollDown();
+      waitIdle();
+    });
 };
 
 const choose = (choice: Choice) => (choice.to ? router.push(choice.to) : send(choice.text ?? choice.label, choice.label));
@@ -158,6 +178,14 @@ const listen = () => {
         >
           <Icon name="mic" />
         </button>
+        <label
+          class="grid size-[52px] flex-none cursor-pointer place-items-center rounded-full bg-mist"
+          :class="{ 'pointer-events-none opacity-50': thinking }"
+          aria-label="Foto nota"
+        >
+          <Icon name="camera" />
+          <input type="file" accept="image/*" class="sr-only" :disabled="thinking" @change="pickPhoto" />
+        </label>
         <input
           v-model="input"
           maxlength="400"

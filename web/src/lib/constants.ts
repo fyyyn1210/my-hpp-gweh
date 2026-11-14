@@ -1,4 +1,15 @@
-import { Unit } from "./types";
+import { PriceSource, Unit, type MarketSource } from "./types";
+
+export const MARKET_SOURCES: Record<MarketSource, { title: string; note: string }> = {
+  [PriceSource.Pihps]: { title: "PIHPS Bank Indonesia", note: "rata-rata pasar tradisional di provinsi Anda" },
+  [PriceSource.Sp2kp]: { title: "SP2KP Kemendag", note: "rata-rata pasar pantauan Kemendag di provinsi Anda" },
+  [PriceSource.Reference]: { title: "Harga perkiraan", note: "harga acuan tetap, belum ada data pasar resmi. Catat nota agar lebih tepat" },
+};
+export const MARKET_SOURCE_ORDER: MarketSource[] = [PriceSource.Pihps, PriceSource.Sp2kp, PriceSource.Reference];
+export const PRICE_ATTRIBUTION =
+  "Sumber harga pasar: PIHPS Nasional Bank Indonesia (bi.go.id/hargapangan) dan SP2KP Kementerian Perdagangan (sp2kp.kemendag.go.id). Aplikasi ini tidak berafiliasi dengan, dan tidak didukung oleh, Bank Indonesia maupun Kementerian Perdagangan.";
+export const PRICE_DISCLAIMER =
+  "Harga pasar adalah rata-rata harga eceran pasar terpilih pada hari kerja dan bisa direvisi esok harinya. Harga yang Anda bayar ke grosir atau pemasok bisa berbeda, jadi pakai sebagai acuan tren, bukan jaminan harga.";
 
 export const DAYS = 120;
 export const TODAY = DAYS - 1;
@@ -14,15 +25,15 @@ export const DEFAULT_THRESHOLD = 0.2;
 export const DEFAULT_EXTRA_COST = 1000;
 export const ROUNDING_STEPS = [500, 1000];
 export const STORAGE_KEY = "hpp-pintar-state-v4";
-export const API_URL: string = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/v1";
+export const API_URL: string = import.meta.env.VITE_API_URL ?? "/api/v1";
 export const PROFILE_SAVE_DELAY_MS = 600;
 export const EXPLAIN_DELAY_MS = 900;
 export const PASSWORD_MIN = 6;
-export const DEMO_EMAIL = "demo@myhppgweh.id";
 export const SUGGEST_IDLE_MS = 3000;
 export const TYPING_TICK_MS = 16;
 export const TYPING_CHARS_PER_TICK = 2;
 export const ASSISTANT_FIRST_STEP = "Membaca pertanyaan...";
+export const ASSISTANT_PHOTO_STEP = "Membaca foto nota...";
 export const SUGGEST_MAX_WORDS = 3;
 export const NOTA_MAX_AGE = 14;
 export const COMMUNITY_WINDOW = 7;
@@ -202,6 +213,10 @@ export const ERROR_MESSAGES: Record<string, string> = {
   MENU_NOT_FOUND: "Menu tidak ditemukan.",
   NOTA_NOT_FOUND: "Catatan tidak ditemukan.",
   SESSION_NOT_FOUND: "Percakapan tidak ditemukan.",
+  VISION_UNAVAILABLE: "Saat ini AI belum bisa membaca foto. Ketik isi nota secara manual, ya.",
+  PHOTO_UNREADABLE: "Tidak ada bahan makanan yang terbaca di foto. Coba foto nota lebih dekat dan terang.",
+  PHOTO_INVALID: "File harus berupa foto.",
+  AI_LIMIT_REACHED: "Jatah tanya AI hari ini sudah habis. Ketik isi nota secara manual, ya.",
   UNKNOWN_COMMODITY: "Ada bahan yang tidak dikenal.",
 };
 export const DEFAULT_ERROR = "Gagal menyimpan. Coba lagi.";

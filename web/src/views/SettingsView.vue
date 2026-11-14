@@ -3,7 +3,7 @@ import { useRouter } from "vue-router";
 import Icon from "@/components/Icon.vue";
 import PageHead from "@/components/PageHead.vue";
 import { useStore } from "@/lib/store";
-import { CITIES, ROUNDING_STEPS } from "@/lib/constants";
+import { CITIES, PRICE_ATTRIBUTION, PRICE_DISCLAIMER, ROUNDING_STEPS } from "@/lib/constants";
 import { thousands } from "@/lib/format";
 
 const router = useRouter();
@@ -33,7 +33,7 @@ const tgName = "@HPPPintarBot";
         <select id="city" v-model="state.city" class="input">
           <option v-for="city in CITIES" :key="city" :value="city">{{ city }}</option>
         </select>
-        <p class="text-sm text-ink-2">Dipakai untuk harga komunitas dan harga PIHPS kota Anda.</p>
+        <p class="text-sm text-ink-2">Dipakai untuk harga komunitas dan harga pasar provinsi Anda.</p>
       </div>
       <div class="flex flex-col gap-2">
         <span class="label">Bulatkan harga jual ke</span>
@@ -73,10 +73,10 @@ const tgName = "@HPPPintarBot";
 
     <section class="card flex flex-col gap-3.5">
       <h2>Tentang data</h2>
-      <p class="text-small">Harga diambil berurutan: <b>nota Anda</b> (14 hari terakhir), lalu <b>harga komunitas</b> kota Anda, lalu <b>PIHPS</b> Bank Indonesia yang disesuaikan dengan nota Anda.</p>
+      <p class="text-small">Harga diambil berurutan: <b>nota Anda</b> (14 hari terakhir), lalu <b>harga komunitas</b> kota Anda, lalu harga pasar dari <b>PIHPS Bank Indonesia</b>, atau <b>SP2KP Kemendag</b> untuk bahan yang tidak ada di PIHPS, disesuaikan dengan nota Anda. Bahan tanpa data pasar resmi memakai <b>harga perkiraan</b>.</p>
       <p class="text-small">AI hanya membantu membaca resep dan menjelaskan. Semua hitungan uang dilakukan sistem, bukan AI.</p>
-      <p class="text-small text-ink-2">Harga PIHPS di versi ini masih contoh, belum harga pasar asli. Menu dan nota Anda tersimpan di akun.</p>
-      <button v-if="store.isDemo.value" class="btn btn-outline w-full" @click="store.resetDemo"><Icon name="refresh" :size="20" />Kembalikan data contoh</button>
+      <p class="text-small text-ink-2">{{ PRICE_DISCLAIMER }}</p>
+      <p class="text-small text-ink-2">{{ PRICE_ATTRIBUTION }} Menu dan nota Anda tersimpan di akun.</p>
     </section>
 
     <section class="card flex flex-col gap-3.5">

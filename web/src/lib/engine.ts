@@ -74,7 +74,7 @@ export const priceInfo = (commodity: Commodity, day = TODAY): PriceInfo => {
   if (nota) return { price: nota.pricePerKg, source: PriceSource.Nota, day: nota.day };
   const community = communityStats(commodity, day);
   if (community) return { price: community.median, source: PriceSource.Community, day };
-  return { price: pihpsPrice(commodity, day) * calibrationOf(commodity), source: PriceSource.Pihps, day };
+  return { price: pihpsPrice(commodity, day) * calibrationOf(commodity), source: commodity.source, day };
 };
 
 export const commodityPrice = (commodity: Commodity, day = TODAY) => priceInfo(commodity, day).price;

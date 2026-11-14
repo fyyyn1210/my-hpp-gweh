@@ -100,6 +100,7 @@ const aiEngine = {
     AI_ENGINE_APIKEY: str(),
     AI_ENGINE_MODEL: str({ default: "deepseek-v4-flash" }),
     AI_ENGINE_FALLBACK_MODELS: str({ default: "glm-5.3,kimi-k2.6,deepseek-v4.1-flash,gpt-5.6-luna" }),
+    AI_ENGINE_VISION_MODELS: str({ default: "" }),
 };
 
 export const env = cleanEnv(process.env, {

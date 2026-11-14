@@ -10,10 +10,21 @@ export const COMMUNITY_MIN = 3;
 export const OUTLIER_LOW = 0.5;
 export const OUTLIER_HIGH = 2;
 export const PASSWORD_MIN = 6;
-export const DEMO_EMAIL = "demo@myhppgweh.id";
-export const DEMO_NAME = "Bu Sari";
 export const CITIES = ["Surabaya", "Jakarta Pusat", "Bandung", "Semarang", "Yogyakarta", "Malang", "Medan", "Makassar", "Denpasar"];
 export const ROUNDING_STEPS = [500, 1000];
+export const NATIONAL_REGION = "national";
+export const CITY_PROVINCE: Record<string, string> = {
+    Surabaya: "Jawa Timur",
+    "Jakarta Pusat": "DKI Jakarta",
+    Bandung: "Jawa Barat",
+    Semarang: "Jawa Tengah",
+    Yogyakarta: "DI Yogyakarta",
+    Malang: "Jawa Timur",
+    Medan: "Sumatera Utara",
+    Makassar: "Sulawesi Selatan",
+    Denpasar: "Bali",
+};
+export const regionOfCity = (city: string) => CITY_PROVINCE[city] ?? NATIONAL_REGION;
 
 export enum Unit {
     Gram = "gram",
@@ -46,6 +57,8 @@ export enum PriceSource {
     Nota = "nota",
     Community = "community",
     Pihps = "pihps",
+    Sp2kp = "sp2kp",
+    Reference = "reference",
     Manual = "manual",
 }
 
