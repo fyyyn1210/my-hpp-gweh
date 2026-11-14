@@ -26,6 +26,7 @@ export const DEFAULT_EXTRA_COST = 1000;
 export const ROUNDING_STEPS = [500, 1000];
 export const STORAGE_KEY = "hpp-pintar-state-v4";
 export const API_URL: string = import.meta.env.VITE_API_URL ?? "/api/v1";
+export const SERVICE_WORKER_URL = "/sw.js";
 export const PROFILE_SAVE_DELAY_MS = 600;
 export const EXPLAIN_DELAY_MS = 900;
 export const PASSWORD_MIN = 6;
@@ -213,6 +214,10 @@ export const ERROR_MESSAGES: Record<string, string> = {
   MENU_NOT_FOUND: "Menu tidak ditemukan.",
   NOTA_NOT_FOUND: "Catatan tidak ditemukan.",
   SESSION_NOT_FOUND: "Percakapan tidak ditemukan.",
+  PUSH_UNAVAILABLE: "Notifikasi belum disiapkan di server.",
+  PUSH_UNSUPPORTED: "Browser ini belum bisa menerima notifikasi. Pakai Chrome, atau pasang aplikasi ke layar utama dulu.",
+  PUSH_DENIED: "Izin notifikasi ditolak. Izinkan notifikasi dari pengaturan browser, lalu coba lagi.",
+  PUSH_NO_DEVICE: "Belum ada HP yang aktif. Tekan Aktifkan dulu.",
   VISION_UNAVAILABLE: "Saat ini AI belum bisa membaca foto. Ketik isi nota secara manual, ya.",
   PHOTO_UNREADABLE: "Tidak ada bahan makanan yang terbaca di foto. Coba foto nota lebih dekat dan terang.",
   PHOTO_INVALID: "File harus berupa foto.",

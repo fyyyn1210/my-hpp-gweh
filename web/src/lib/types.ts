@@ -120,6 +120,7 @@ export interface Profile {
   roundingStep: number;
   notifyInApp: boolean;
   notifyTelegram: boolean;
+  notifyPush: boolean;
 }
 
 export interface PriceInfo {

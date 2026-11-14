@@ -16,6 +16,9 @@ import { menuController } from "#src/modules/menus/menu.controller.js";
 import { notaController } from "#src/modules/notas/nota.controller.js";
 import { profileController } from "#src/modules/profile/profile.controller.js";
 import { recipeController } from "#src/modules/recipes/recipe.controller.js";
+import { pushController } from "#src/modules/push/push.controller.js";
+import { pushDailyReminder, pushPriceNews } from "#src/modules/push/push.service.js";
+import { PUSH_PRICE_CRON, PUSH_REMINDER_CRON } from "#src/utils/push.constant.js";
 
 const siteAllowed = env.NODE_ENV !== "production" ? true : [];
 
@@ -42,6 +45,7 @@ export const app = new Elysia()
                 { name: "Alerts", description: "Margin and price alerts" },
                 { name: "Recipes", description: "Recipe text parser" },
                 { name: "Assistant", description: "AI assistant with tool calling" },
+                { name: "Push", description: "Firebase push notification devices" },
             ],
             servers: [
                 { url: `http://localhost:${env.APP_PORT}`, description: "Local (localhost)" },
@@ -114,7 +118,8 @@ export const app = new Elysia()
         .use(notaController)
         .use(alertController)
         .use(recipeController)
-        .use(assistantController));
+        .use(assistantController)
+        .use(pushController));
 
 if (import.meta.main) {
     app.use(cron({
@@ -123,6 +128,18 @@ if (import.meta.main) {
         timezone: "UTC",
         protect: true,
         run: () => syncPrices().catch((error) => logger.error({ error: String(error) }, "Price sync cron failed")),
+    })).use(cron({
+        name: "push-price-news",
+        pattern: PUSH_PRICE_CRON,
+        timezone: "UTC",
+        protect: true,
+        run: () => pushPriceNews().catch((error) => logger.error({ error: String(error) }, "Price push cron failed")),
+    })).use(cron({
+        name: "push-daily-reminder",
+        pattern: PUSH_REMINDER_CRON,
+        timezone: "UTC",
+        protect: true,
+        run: () => pushDailyReminder().catch((error) => logger.error({ error: String(error) }, "Reminder push cron failed")),
     })).onStart(({ server }) => {
         console.log(`Server run on port:${server?.port}`);
     }).listen(env.APP_PORT);

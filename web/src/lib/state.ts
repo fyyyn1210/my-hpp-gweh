@@ -21,6 +21,7 @@ export interface AppState extends PersistedState {
   roundingStep: number;
   notifyInApp: boolean;
   notifyTelegram: boolean;
+  notifyPush: boolean;
 }
 
 const PERSISTED: Array<keyof PersistedState> = ["onboardingDone", "session", "accessToken", "refreshToken", "telegramLinked", "telegramCode"];
@@ -41,6 +42,7 @@ export const defaults = (): AppState => ({
   roundingStep: ROUNDING_STEPS[0],
   notifyInApp: true,
   notifyTelegram: true,
+  notifyPush: true,
 });
 
 const load = (): AppState => {

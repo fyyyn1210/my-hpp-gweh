@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import { useRouter } from "vue-router";
+import { enablePush, testPush } from "@/lib/push";
 import Icon from "@/components/Icon.vue";
 import PageHead from "@/components/PageHead.vue";
 import { useStore } from "@/lib/store";
@@ -16,6 +18,26 @@ const logout = () => {
 };
 
 const tgName = "@HPPPintarBot";
+
+const pushBusy = ref(false);
+
+const activatePush = async () => {
+  pushBusy.value = true;
+  try {
+    await enablePush();
+    state.notifyPush = true;
+    store.showToast("Notifikasi aktif di HP ini");
+  } catch (error) {
+    store.report(error);
+  } finally {
+    pushBusy.value = false;
+  }
+};
+
+const sendTest = () =>
+  testPush()
+    .then(() => store.showToast("Notifikasi tes dikirim"))
+    .catch(store.report);
 </script>
 
 <template>
@@ -69,6 +91,17 @@ const tgName = "@HPPPintarBot";
         </span>
         <input v-model="state.notifyInApp" type="checkbox" class="toggle" />
       </label>
+      <label class="flex min-h-14 cursor-pointer items-center gap-3">
+        <span class="min-w-0 flex-1">
+          <strong>Notifikasi HP</strong>
+          <span class="block text-tiny text-ink-2">Harga pasar terbaru (hari kerja 14.30 WIB), harga bahan melonjak, untung menu turun atau rugi, dan pengingat catat belanja (10.00 WIB).</span>
+        </span>
+        <input v-model="state.notifyPush" type="checkbox" class="toggle" />
+      </label>
+      <div class="flex gap-2">
+        <button class="btn btn-sm btn-white flex-1" :disabled="pushBusy" @click="activatePush"><Icon name="bell" :size="18" />Aktifkan di HP ini</button>
+        <button class="btn btn-sm btn-white" :disabled="pushBusy" @click="sendTest">Kirim tes</button>
+      </div>
     </section>
 
     <section class="card flex flex-col gap-3.5">

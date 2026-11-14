@@ -11,7 +11,7 @@ export const findUser = async (id: string) => {
     return user;
 };
 
-export const updateProfile = async (id: string, patch: Partial<Pick<User, "name" | "city" | "shareCommunity" | "roundingStep" | "notifyInApp" | "notifyTelegram">>) => {
+export const updateProfile = async (id: string, patch: Partial<Pick<User, "name" | "city" | "shareCommunity" | "roundingStep" | "notifyInApp" | "notifyTelegram" | "notifyPush">>) => {
     if (Object.keys(patch).length) await db.update(users).set(patch).where(eq(users.id, id));
     return toProfile(await findUser(id));
 };

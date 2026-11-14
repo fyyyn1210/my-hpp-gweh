@@ -103,12 +103,19 @@ const aiEngine = {
     AI_ENGINE_VISION_MODELS: str({ default: "" }),
 };
 
+const firebase = {
+    FIREBASE_PROJECT_ID: str({ default: "" }),
+    FIREBASE_CLIENT_EMAIL: str({ default: "" }),
+    FIREBASE_PRIVATE_KEY: str({ default: "" }),
+};
+
 export const env = cleanEnv(process.env, {
     ...application,
     ...logs,
     ...postgres,
     ...jwt,
     ...aiEngine,
+    ...firebase,
 });
 
 export default env;

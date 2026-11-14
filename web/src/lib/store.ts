@@ -54,6 +54,7 @@ const profileOf = () => ({
   roundingStep: state.roundingStep,
   notifyInApp: state.notifyInApp,
   notifyTelegram: state.notifyTelegram,
+  notifyPush: state.notifyPush,
 });
 
 let savedProfile = "";
@@ -68,6 +69,7 @@ const applyProfile = (user: Profile) => {
     roundingStep: user.roundingStep,
     notifyInApp: user.notifyInApp,
     notifyTelegram: user.notifyTelegram,
+    notifyPush: user.notifyPush,
   });
   savedProfile = JSON.stringify(profileOf());
 };

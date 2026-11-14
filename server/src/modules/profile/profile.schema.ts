@@ -11,5 +11,6 @@ export const updateProfileSchema = {
         roundingStep: t.Union(ROUNDING_STEPS.map((step) => t.Literal(step))),
         notifyInApp: t.Boolean(),
         notifyTelegram: t.Boolean(),
+        notifyPush: t.Boolean(),
     })),
 };

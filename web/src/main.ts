@@ -2,6 +2,7 @@ import { createApp } from "vue";
 import Lenis from "lenis";
 import { createRouter, createWebHashHistory } from "vue-router";
 import App from "./App.vue";
+import { registerServiceWorker } from "./lib/push";
 import { useStore } from "./lib/store";
 import "./style.css";
 
@@ -39,3 +40,4 @@ const lenis = matchMedia("(prefers-reduced-motion: reduce)").matches ? null : ne
 router.afterEach(() => (lenis ? lenis.scrollTo(0, { immediate: true }) : window.scrollTo(0, 0)));
 
 createApp(App).use(router).mount("#app");
+registerServiceWorker();

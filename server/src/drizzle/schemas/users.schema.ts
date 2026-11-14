@@ -10,6 +10,7 @@ export const users = pgTable("users", {
     roundingStep: integer("rounding_step").notNull().default(500),
     notifyInApp: boolean("notify_in_app").notNull().default(true),
     notifyTelegram: boolean("notify_telegram").notNull().default(true),
+    notifyPush: boolean("notify_push").notNull().default(true),
     createdAt: timestamp("created_at", { precision: 3, withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { precision: 3, withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
