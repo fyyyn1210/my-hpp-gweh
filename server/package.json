@@ -14,7 +14,8 @@
     "db:studio": "bun --bun drizzle-kit studio --config=src/configs/drizzle.config.ts",
     "db:seed": "bun .scripts/seed.ts",
     "prices:sync": "bun .scripts/sync-prices.ts",
-    "ai:probe": "bun .scripts/probe-models.ts",
+    "push:broadcast": "bun .scripts/push-broadcast.ts",
+    "ai:probe":"bun .scripts/probe-models.ts",
     "check": "bun src/modules/hpp/hpp.engine.check.ts && bun src/modules/recipes/recipe.parser.check.ts && bun src/modules/commodities/pihps.parser.check.ts",
     "test": "bun test"
   },

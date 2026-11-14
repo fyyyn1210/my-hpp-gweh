@@ -95,6 +95,9 @@ export const pushDailyReminder = async () => {
     );
 };
 
+export const pushBroadcast = (title: string, body: string) =>
+    forEachRecipient((userId) => notify(userId, message(PushKind.PriceUpdate, title, body)));
+
 export const pushTest = async (userId: string) => {
     if (!pushEnabled) throw fault({ code: 503, message: "PUSH_UNAVAILABLE", cause: "Firebase is not configured on the server" });
     const sent = await notify(userId, message(PushKind.Test, PUSH_TEST.title, PUSH_TEST.body));
