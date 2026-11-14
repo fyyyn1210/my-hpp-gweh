@@ -11,6 +11,7 @@ import { findUser } from "#src/modules/profile/profile.service.js";
 import {
     AssistantRole,
     CACHE_MAX,
+    CARD_WORD,
     CardKind,
     CACHE_TTL_MS,
     DAILY_LIMIT,
@@ -155,9 +156,11 @@ const finish = (ctx: ToolContext, content: string, results: ToolResult[], histor
     const text = content.replace(/\*\*|__|`/g, "").replace(/^#+\s*/gm, "").trim();
     const grounded = isGrounded(text, [ctx.text, ...history.map((message) => message.content), ...results.map((result) => result.summary)]);
     const fallback = results.map((result) => result.text).filter(Boolean).join(" ") || DEFAULT_REPLY;
+    const cards = results.flatMap((result) => [...(result.card ? [result.card] : []), ...(result.cards ?? [])]);
+    const phantomCard = cards.length === 0 && CARD_WORD.test(text);
     return {
-        text: text && grounded ? text : fallback,
-        cards: results.flatMap((result) => [...(result.card ? [result.card] : []), ...(result.cards ?? [])]),
+        text: text && grounded && !phantomCard ? text : fallback,
+        cards,
         choices: results.flatMap((result) => result.choices ?? []),
         ask: false,
         grounded,

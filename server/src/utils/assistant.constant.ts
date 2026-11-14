@@ -114,4 +114,5 @@ export const WHEN_CHOICES = [
 ];
 export const COMMON_MENU_WORDS = new Set(["nasi", "ayam", "mie", "telur", "daging", "goreng"]);
 
+export const CARD_WORD = /\bkartu/i;
 export const DEFAULT_REPLY = "Maaf, saya belum paham. Saya bisa bantu soal untung menu, harga bahan, catat belanja, dan hitung pesanan.";

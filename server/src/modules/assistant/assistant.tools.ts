@@ -242,7 +242,7 @@ const cateringQuote = (ctx: ToolContext, args: Args): ToolResult => {
 };
 
 const untrackedNota = (name: string): ToolResult => ({
-    text: `${name} belum ada di daftar harga bahan, jadi belum bisa dicatat sebagai nota. Harga ${name} bisa dimasukkan di resep menu lewat Ubah menu.`,
+    text: `${name} belum ada di daftar harga bahan, jadi belum bisa dicatat sebagai nota. Harganya bisa dimasukkan di resep menu lewat Ubah menu.`,
     summary: { ingredient: name, tracked: false, saved: false },
 });
 
@@ -251,8 +251,9 @@ const draftNota = (ctx: ToolContext, args: Args): ToolResult => {
     const named = items.filter((item) => label(item.ingredient));
     if (named.length <= 1) return draftNotaItem(ctx, named[0] ?? items[0] ?? {});
     const results = named.map((item) => draftNotaItem(ctx, item));
+    const untracked = results.filter((result) => result.summary?.tracked === false).map((result) => String(result.summary?.ingredient));
     return {
-        text: results.map((result) => result.text).join(" "),
+        text: [...results.filter((result) => result.summary?.tracked !== false).map((result) => result.text), ...(untracked.length ? [untrackedNota(untracked.join(", ")).text] : [])].join(" "),
         summary: { items: results.map((result) => result.summary ?? { message: result.text }) },
         cards: results.flatMap((result) => (result.card ? [result.card] : [])),
     };
