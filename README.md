@@ -9,8 +9,8 @@ MyHPPGweh adalah penjaga margin untuk UMKM kuliner. Aplikasi menghitung HPP (har
 | Kompetisi | Logicodix 2026, Hackathon |
 | Kategori | **Web** |
 | Subtema | Local MSME & Creative Economy |
-| Nama tim | [ISI: nama tim] |
-| Anggota | [ISI: nama lengkap, peran, instansi, akun GitHub] |
+| Nama tim | Tim |
+| Anggota | Rio Putra Pratama - Leader - @fyyyn1210 |
 | Aplikasi (deploy) | [ISI: URL web] |
 | Video demo | [ISI: URL YouTube] |
 | Commit final | [ISI: commit hash] |
@@ -335,7 +335,6 @@ AI diakses lewat **penyedia pihak ketiga dengan API kompatibel OpenAI** (`AI_ENG
 | Cadangan (dicoba berurutan bila model utama gagal) | `glm-5.3`, `kimi-k2.6`, `deepseek-v4.1-flash`, `gpt-5.6-luna` |
 | Baca foto nota (vision) | `deepseek-v4.1-flash` |
 
-[ISI: sesuaikan bila model di server deploy berbeda]
 
 ### Bagian produk yang memakai AI
 | Bagian | Peran AI | Yang tetap dikerjakan kode |

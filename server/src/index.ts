@@ -20,7 +20,7 @@ import { pushController } from "#src/modules/push/push.controller.js";
 import { pushDailyReminder, pushPriceNews } from "#src/modules/push/push.service.js";
 import { PUSH_PRICE_CRON, PUSH_REMINDER_CRON } from "#src/utils/push.constant.js";
 
-const siteAllowed = env.NODE_ENV !== "production" ? true : [];
+const siteAllowed = env.APP_CORS_ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean);
 
 export const app = new Elysia()
     .use(cors({ origin: siteAllowed }))

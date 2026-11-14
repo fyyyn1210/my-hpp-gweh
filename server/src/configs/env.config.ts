@@ -69,6 +69,7 @@ const application = {
     NODE_ENV: str({ choices: ["development", "test", "production"], default: "development" }),
     APP_PORT: port({ default: 3000 }),
     APP_CLIENT_TIMEZONE: str({ choices: CLIENT_TIMEZONES, default: ClientTimezone.Utc }),
+    APP_CORS_ORIGINS: str({ default: "" }),
 };
 
 const logs = {
